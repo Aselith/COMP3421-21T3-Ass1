@@ -1,8 +1,9 @@
 # COMP3421 Assignment 1: Getting Ready for Graphics Programming
 
 ### Changelog
-- Version 1.0 (Release on 18/9/2021): Note that Information on Infrastructure is still pending.
-- Version 1.1 (Release on 18/9/2021): Assignment repos proper released to students
+- Version 1.0 (Released on 18/9/2021): Note that Information on Infrastructure is still pending.
+- Version 1.1 (Released on 18/9/2021): Assignment repos proper released to students
+- Version 1.2 (Released on 20/9/2021): Assignment build system and submission instructions updated
 
 ## Introduction
 The purpose of this assignment is to get you ready for Graphics Programming and to give you a taste of how the basic setup and "Hello World" of an OpenGL Programming environment should work.
@@ -74,7 +75,7 @@ How this is marked:
 - 0/10 - "This looks like the tutorials copy pasted into the assignment"
 
 ## Documentation Template
-A template text file has been included in the cloned project. You will need to edit this file with information on what you have implemented in the assignment.
+A template text file called JUSTIFICATION.md has been included in the cloned project. You will need to edit this file with information on what you have implemented in the assignment.
 
 **Important: You will be documenting evidence of what you have worked on in the assignment and will be marked based on what you have claimed to have completed. If you leave this document unedited or empty, you will receive no marks for the assignment.**
 
