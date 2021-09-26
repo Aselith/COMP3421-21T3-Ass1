@@ -17,8 +17,8 @@
 
 #include <iostream>
 
-#define SCREEN_WIDTH  720
-#define SCREEN_HEIGHT 720
+#define SCREEN_WIDTH  1024
+#define SCREEN_HEIGHT 1024
 #define TICKS_TO_SECOND 20
 
 #define GROUND_POS_Y -0.8
@@ -26,37 +26,115 @@
 #define GROUND_TILES 20
 
 #define FG_TIMER 500
-#define PARALLAX_TIMER 3
+#define PARALLAX_TIMER 4
 #define FG_POS_Y 0.9
 #define FG_SCALE 1.5
+#define PARALLAX_POS_Y 0.4
+#define PARALLAX_POS_X 2.0
+#define MAX_FRAMES_SKY 2
+#define MOON_SCALE 0.2
+#define MOON_POS_XY 0.6
 
-#define TREE_CHANCE 300
-#define GOLEM_CHANCE 400
+#define BG_SPAWN_CHANCE 400
 
 #define WALKING_SPEED 0.01
 
-#define ANIM_FRAME_LEN 1
+#define ANIM_FRAME_LEN 4
 #define AIRBORNE_LEN_MAX 15
-#define MAX_FRAMES_WALK 8
+#define MAX_FRAMES_GOAT 8
 #define GOAT_POS_Y -0.18
 #define GOAT_SCALE 0.5
 #define GOAT_JUMP_ROT 5.0f
 #define GOAT_WALK_SPEED 0.015
 #define GOAT_WALK_RANGE 1
 
-#define FLAKE_TOTAL 40
+#define FLAKE_TOTAL 500
 #define FLAKE_TIMER 400
 #define FLAKE_ROT_SPEED 5.0f
-#define FLAKE_CHANCE 15
+#define FLAKE_CHANCE 5
+#define FLAKE_SCALE 0.05
+#define FLAKE_POS_X 1.05
 
-#define TOTAL_FG_TEX 6
+#define TOTAL_FG_TEX 12
+#define TOTAL_P_TEX 2
+#define TREE_LOOP_POS_Y 0.4
 
+const char *APP_TITLE = "COMP3421 Assignment 1 - Minecraft Nightier Night";
+bool enableOverlay = true;
+
+std::list<chicken3421::image_t> listOfEveryImage;
+std::list<GLuint> listOfEveryTexID;
 
 // HELPER FUNCTIONS
 
-GLuint make_texture(const chicken3421::image_t &tex_img);
+/**
+ * Randomly generates a number between -1 to 1 
+ * @return float
+ */
 float rdmNumGen() {
     return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+}
+
+GLuint makeTexture(const chicken3421::image_t &texImg) {
+
+    GLint format;
+    if (texImg.n_channels == 3) {
+        format = GL_RGB;
+    } else {
+        format = GL_RGBA;
+    }
+
+    // Enabling transparent pixels
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    GLuint tex;
+    glGenTextures(1, &tex);
+
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, texImg.width, texImg.height, 0, format, GL_UNSIGNED_BYTE, texImg.data);
+
+    // Have filter to be GL_NEAREST to replicate the Minecraft pixel art
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    // Have textures repeat if it does not fit the shape
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    listOfEveryTexID.push_back(tex);
+
+    return tex;
+}
+
+chicken3421::image_t makeImage(const std::string &fileName) {
+    chicken3421::image_t loadedImage = chicken3421::load_image(fileName);
+    listOfEveryImage.push_back(loadedImage);
+    return loadedImage;
+}
+
+void printMessageTime() {
+    auto currTime = time(0);
+    char *chrTime = std::ctime(&currTime);
+    std::string strTime(chrTime);
+    strTime.pop_back();
+    std::cout << "[" << strTime << "] ";
+    return;
+}
+
+void deleteAllTexImg() {
+    while (listOfEveryTexID.size() > 0) {
+        std::cout << "Deleted tex: " << &listOfEveryTexID.front() << "\n";
+        glDeleteTextures(1, &listOfEveryTexID.front());
+        listOfEveryTexID.pop_front();
+    }
+    while (listOfEveryImage.size() > 0) {
+        std::cout << "Deleted img: " << listOfEveryImage.front().data << "\n";
+        chicken3421::delete_image(listOfEveryImage.front());
+        listOfEveryImage.pop_front();
+    }
 }
 
 // STRUCTS //
@@ -66,6 +144,7 @@ struct vertexGroup {
 };
 
 struct shapeObject {
+
     GLuint vao;
     GLuint vbo;
     GLuint textureID;
@@ -81,32 +160,40 @@ struct shapeObject {
         rot = glm::mat4(1.0f);
         scale = glm::mat4(1.0f);
     }
+
+    void deleteSelf() {
+        vertices.clear();
+        glDeleteBuffers(1, &vbo);
+        glDeleteVertexArrays(1, &vao);
+    }
 };
 
 struct goatObject {
     shapeObject goatShape;
-    GLuint goatAnimationFrames[MAX_FRAMES_WALK];
-    int currFrame = 0;
-    int frameLifeTime = 0;
-    bool isAirBorne = false;
-    int airBorneLen = 0;
-    float walkedDistance = 0;
+    GLuint goatAnimationFrames[MAX_FRAMES_GOAT];
+    private:
+        int currFrame = 0;
+        int frameLifeTime = 0;
+        bool isAirBorne = false;
+        int airBorneLen = 0;
+        float walkedDistance = 0;
 
+    public:
     goatObject() {
-        chicken3421::image_t standStill = chicken3421::load_image("res/img/goat/goatTexture_1.png");
-        chicken3421::image_t rightLegStart = chicken3421::load_image("res/img/goat/goatTexture_4.png");
-        chicken3421::image_t rightLegEnd = chicken3421::load_image("res/img/goat/goatTexture_2.png");
-        chicken3421::image_t leftLegStart = chicken3421::load_image("res/img/goat/goatTexture_5.png");
-        chicken3421::image_t leftLegEnd = chicken3421::load_image("res/img/goat/goatTexture_3.png");
+        chicken3421::image_t standStill = makeImage("res/img/goat/goatTexture_1.png");
+        chicken3421::image_t rightLegStart = makeImage("res/img/goat/goatTexture_4.png");
+        chicken3421::image_t rightLegEnd = makeImage("res/img/goat/goatTexture_2.png");
+        chicken3421::image_t leftLegStart = makeImage("res/img/goat/goatTexture_5.png");
+        chicken3421::image_t leftLegEnd = makeImage("res/img/goat/goatTexture_3.png");
 
         // Sets up each frame of the animation
-        goatAnimationFrames[0] = make_texture(standStill);
-        goatAnimationFrames[1] = make_texture(rightLegStart);
-        goatAnimationFrames[2] = make_texture(rightLegEnd);
+        goatAnimationFrames[0] = makeTexture(standStill);
+        goatAnimationFrames[1] = makeTexture(rightLegStart);
+        goatAnimationFrames[2] = makeTexture(rightLegEnd);
         goatAnimationFrames[3] = goatAnimationFrames[1];
         goatAnimationFrames[4] = goatAnimationFrames[0];
-        goatAnimationFrames[5] = make_texture(leftLegStart);
-        goatAnimationFrames[6] = make_texture(leftLegEnd);
+        goatAnimationFrames[5] = makeTexture(leftLegStart);
+        goatAnimationFrames[6] = makeTexture(leftLegEnd);
         goatAnimationFrames[7] = goatAnimationFrames[5];
     }
 
@@ -115,7 +202,7 @@ struct goatObject {
         if (!isAirBorne) {
             if (frameLifeTime == 0) {
                 goatShape.textureID = goatAnimationFrames[currFrame];
-                currFrame = (currFrame + 1) % MAX_FRAMES_WALK;
+                currFrame = (currFrame + 1) % MAX_FRAMES_GOAT;
                 frameLifeTime = ANIM_FRAME_LEN;
             } else {
                 frameLifeTime -= 1;
@@ -132,6 +219,7 @@ struct goatObject {
                 // Draws out a differentiated parabola on how far the shape goes up
                 // Original equation = 0.5 * (0.3 * x - 0.02 * x * x)
                 float velocity = 0.5 * (0.3 - 0.04 * airBorneLen);
+                // printMessageTime();
                 // std::cout << "Velocity at: " << velocity << "\n"; // FOR DEBUGGING
                 goatShape.trans = glm::translate(goatShape.trans, glm::vec3(0.0, velocity, 0.0));
             }
@@ -181,57 +269,119 @@ struct snowFlakeObject {
 };
 
 struct scene {
+    shapeObject overlay;
     shapeObject background;
+    shapeObject moon;
+    shapeObject clouds;
     shapeObject ground;
     shapeObject foregroundObjA;
     shapeObject foregroundObjB;
     shapeObject parallaxObj;
+    shapeObject parallaxLoopObj;
     snowFlakeObject snowFlakes[FLAKE_TOTAL];
     goatObject goat;
 
-    float translatedGroundPos = 0;
+    private:
+        float translatedGroundPos = 0, translatedParallaxLoopPos = 0;
 
-    int fgObjATimer = FG_TIMER;
-    int fgObjBTimer = FG_TIMER;
-    int parallaxTimer = PARALLAX_TIMER * FG_TIMER;
-    bool fgObjASpawned = false;
-    bool fgObjBSpawned = false;
-    bool pallxSpawned = false;
+        int fgObjATimer = FG_TIMER;
+        int fgObjBTimer = FG_TIMER;
+        int parallaxTimer = PARALLAX_TIMER * FG_TIMER;
+        bool fgObjASpawned = false;
+        bool fgObjBSpawned = false;
+        bool pallxSpawned = false;
 
-    GLuint possibleTexID[TOTAL_FG_TEX];
+        GLuint possibleTexID[TOTAL_FG_TEX];
+        GLuint possibleParaTexID[TOTAL_P_TEX];
+        GLuint skyAnimationFrames[2];
 
+    public:
     scene() {
         // Loading in all possible textures
-        chicken3421::image_t tree = chicken3421::load_image("res/img/treeTexture.png");
-        chicken3421::image_t golemA = chicken3421::load_image("res/img/snowGolemATexture.png");
-        chicken3421::image_t golemB = chicken3421::load_image("res/img/snowGolemBTexture.png");
-        chicken3421::image_t mossyPile = chicken3421::load_image("res/img/mossyPileTexture.png");
-        chicken3421::image_t berryA = chicken3421::load_image("res/img/berryBushesATexture.png");
-        chicken3421::image_t berryB = chicken3421::load_image("res/img/berryBushesBTexture.png");
+        chicken3421::image_t treeA = makeImage("res/img/treeATexture.png");
+        chicken3421::image_t treeB = makeImage("res/img/treeBTexture.png");
+        chicken3421::image_t golemA = makeImage("res/img/snowGolemATexture.png");
+        chicken3421::image_t golemB = makeImage("res/img/snowGolemBTexture.png");
+        chicken3421::image_t mossyPile = makeImage("res/img/mossyPileTexture.png");
+        chicken3421::image_t berryA = makeImage("res/img/berryBushesATexture.png");
+        chicken3421::image_t berryB = makeImage("res/img/berryBushesBTexture.png");
+        chicken3421::image_t plainA = makeImage("res/img/plainGrassATexture.png");
+        chicken3421::image_t plainB = makeImage("res/img/plainGrassBTexture.png");
+        chicken3421::image_t creeper = makeImage("res/img/creeperTexture.png");
+        chicken3421::image_t spikeA = makeImage("res/img/iceSpikeATexture.png");
+        chicken3421::image_t spikeB = makeImage("res/img/iceSpikeBTexture.png");
 
-        possibleTexID[0] = make_texture(tree);
-        possibleTexID[1] = make_texture(golemA);
-        possibleTexID[2] = make_texture(golemB);
-        possibleTexID[3] = make_texture(mossyPile);
-        possibleTexID[4] = make_texture(berryA);
-        possibleTexID[5] = make_texture(berryB);
+        chicken3421::image_t parallaxA = makeImage("res/img/mountainAParallax.png");
+        chicken3421::image_t parallaxB = makeImage("res/img/mountainBParallax.png");
 
+        chicken3421::image_t sky1 = makeImage("res/img/sky/nightSky_1.png");
+        chicken3421::image_t sky2 = makeImage("res/img/sky/nightSky_2.png");
+
+        possibleTexID[0] = makeTexture(treeA);
+        possibleTexID[1] = makeTexture(treeB);
+        possibleTexID[2] = makeTexture(golemA);
+        possibleTexID[3] = makeTexture(golemB);
+        possibleTexID[4] = makeTexture(mossyPile);
+        possibleTexID[5] = makeTexture(berryA);
+        possibleTexID[6] = makeTexture(berryB);
+        possibleTexID[7] = makeTexture(plainA);
+        possibleTexID[8] = makeTexture(plainB);
+        possibleTexID[9] = makeTexture(creeper);
+        possibleTexID[10] = makeTexture(spikeA);
+        possibleTexID[11] = makeTexture(spikeB);
+
+        possibleParaTexID[0] = makeTexture(parallaxA);
+        possibleParaTexID[1] = makeTexture(parallaxB);
+
+        skyAnimationFrames[0] = makeTexture(sky1);
+        skyAnimationFrames[1] = makeTexture(sky2);
+
+    }
+
+    void deleteAllShapes() {
+        overlay.deleteSelf();
+        background.deleteSelf();
+        moon.deleteSelf();
+        foregroundObjA.deleteSelf();
+        foregroundObjB.deleteSelf();
+        ground.deleteSelf();
+        parallaxObj.deleteSelf();
+        goat.goatShape.deleteSelf();
+        for (int i = 0; i < FLAKE_TOTAL; i++) {
+            snowFlakes[i].snowFlakeShape.deleteSelf();
+        }
     }
 
     std::list<shapeObject> getAllObjects() {
         std::list<shapeObject> returnList;
         returnList.emplace_back(background);
-        returnList.emplace_back(parallaxObj);
-        for (int i = 0; i < FLAKE_TOTAL / 2; i++) {
-            returnList.emplace_back(snowFlakes[i].snowFlakeShape);
+        returnList.emplace_back(moon);
+        returnList.emplace_back(clouds);
+        returnList.emplace_back(parallaxLoopObj);
+        if (pallxSpawned) {
+            returnList.emplace_back(parallaxObj);
         }
-        returnList.emplace_back(foregroundObjA);
-        returnList.emplace_back(foregroundObjB);
+        for (int i = 0; i < FLAKE_TOTAL / 2; i++) {
+            if (snowFlakes[i].isActive) {
+                returnList.emplace_back(snowFlakes[i].snowFlakeShape);
+            }
+        }
+        if (fgObjASpawned) {
+            returnList.emplace_back(foregroundObjA);
+        }
+        if (fgObjBSpawned) {
+            returnList.emplace_back(foregroundObjB);
+        }
         returnList.emplace_back(goat.goatShape);
         for (int i = FLAKE_TOTAL / 2; i < FLAKE_TOTAL; i++) {
-            returnList.emplace_back(snowFlakes[i].snowFlakeShape);
+            if (snowFlakes[i].isActive) {
+                returnList.emplace_back(snowFlakes[i].snowFlakeShape);
+            }
         }
         returnList.emplace_back(ground);
+        if (enableOverlay) {
+            returnList.emplace_back(overlay);
+        }
         return returnList;
     }
 
@@ -239,17 +389,34 @@ struct scene {
         goat.nextFrame();   
     }
 
+    void tickSky() {
+        background.textureID = skyAnimationFrames[rand() % MAX_FRAMES_SKY];
+    }
+
     void tickGround() {
+        // Ticks the immediate ground
         if (translatedGroundPos < 0) {
+            printMessageTime();
+            std::cout << "Reset ground\n";
             translatedGroundPos = 1;
-            ground.trans = glm::mat4(1.0f);
-            ground.rot = glm::mat4(1.0f);
-            ground.scale = glm::mat4(1.0f);
+            ground.resetTransforms();
             ground.trans = glm::translate(ground.trans, glm::vec3(0.0, GROUND_POS_Y, 0.0));
             ground.scale = glm::scale(ground.scale, glm::vec3(GROUND_SCALE, GROUND_SCALE, 0.0));
         }
         ground.trans = glm::translate(ground.trans, glm::vec3(-WALKING_SPEED, 0.0, 0.0));
-        translatedGroundPos -= 0.005;
+        translatedGroundPos -= WALKING_SPEED / 2;
+
+        // Ticks the tree loop in the background
+        if (translatedParallaxLoopPos < 0) {
+            printMessageTime();
+            std::cout << "Reset tree loop\n";
+            translatedParallaxLoopPos = 1;
+            parallaxLoopObj.resetTransforms();
+            parallaxLoopObj.trans = glm::translate(parallaxLoopObj.trans, glm::vec3(0.0, TREE_LOOP_POS_Y, 0.0));
+        }
+        parallaxLoopObj.trans = glm::translate(parallaxLoopObj.trans, glm::vec3(-WALKING_SPEED / 10, 0.0, 0.0));
+        translatedParallaxLoopPos -= WALKING_SPEED / 10;
+
     }
 
     void tickFgObjA() {
@@ -257,6 +424,7 @@ struct scene {
             foregroundObjA.trans = glm::translate(foregroundObjA.trans, glm::vec3(-WALKING_SPEED, 0.0, 0.0));
             fgObjATimer -= 1;
             if (fgObjATimer < 0) {
+                printMessageTime();
                 std::cout << "ObjA has reached the end\n";
                 fgObjATimer = FG_TIMER;
                 foregroundObjA.resetTransforms();
@@ -265,9 +433,10 @@ struct scene {
                 fgObjASpawned = false;
             }
         } else {
-            if (rand() % TREE_CHANCE == 0) {
+            if (rand() % BG_SPAWN_CHANCE == 0) {
                 foregroundObjA.textureID = possibleTexID[rand() % TOTAL_FG_TEX];
-                std::cout << "ObjA spawned\n";
+                printMessageTime();
+                std::cout << "ObjA spawned with texture ID: " << foregroundObjA.textureID << "\n";
                 fgObjASpawned = true;
             }
         }
@@ -278,6 +447,7 @@ struct scene {
             foregroundObjB.trans = glm::translate(foregroundObjB.trans, glm::vec3(-WALKING_SPEED, 0.0, 0.0));
             fgObjBTimer -= 1;
             if (fgObjBTimer < 0) {
+                printMessageTime();
                 std::cout << "ObjB has reached the end\n";
                 fgObjBTimer = FG_TIMER;
                 foregroundObjB.resetTransforms();
@@ -286,9 +456,10 @@ struct scene {
                 fgObjBSpawned = false;
             }
         } else {
-            if (rand() % GOLEM_CHANCE == 3) {
+            if (rand() % BG_SPAWN_CHANCE == 3) {
                 foregroundObjB.textureID = possibleTexID[rand() % TOTAL_FG_TEX];
-                std::cout << "ObjB spawned\n";
+                printMessageTime();
+                std::cout << "ObjB spawned with texture ID: " << foregroundObjB.textureID << "\n";
                 fgObjBSpawned = true;
             }
         }
@@ -299,15 +470,18 @@ struct scene {
             parallaxObj.trans = glm::translate(parallaxObj.trans, glm::vec3(-(WALKING_SPEED / PARALLAX_TIMER), 0.0, 0.0));
             parallaxTimer -= 1;
             if (parallaxTimer < 0) {
+                printMessageTime();
                 std::cout << "Parallax has reached the end\n";
                 parallaxTimer = PARALLAX_TIMER * FG_TIMER;
                 parallaxObj.resetTransforms();
-                parallaxObj.trans = glm::translate(parallaxObj.trans, glm::vec3(1.8, 0.4, 0.0));
+                parallaxObj.trans = glm::translate(parallaxObj.trans, glm::vec3(PARALLAX_POS_X, PARALLAX_POS_Y, 0.0));
                 pallxSpawned = false;
             }
         } else {
-            if (rand() % TREE_CHANCE == 0) {
-                std::cout << "Parallax spawned\n";
+            if (rand() % BG_SPAWN_CHANCE == 7) {
+                parallaxObj.textureID = possibleParaTexID[rand() % TOTAL_P_TEX];
+                printMessageTime();
+                std::cout << "Parallax spawned with texture ID: " << parallaxObj.textureID << "\n";
                 pallxSpawned = true;
             }
         }
@@ -328,8 +502,8 @@ struct scene {
                     snowFlakes[i].snowFlakeShape.resetTransforms();
 
                     // Scale it back down and translate it to the top of the screen
-                    snowFlakes[i].snowFlakeShape.scale = glm::scale(snowFlakes[i].snowFlakeShape.scale, glm::vec3(0.05, 0.05, 0.0));
-                    snowFlakes[i].snowFlakeShape.trans = glm::translate(snowFlakes[i].snowFlakeShape.trans, glm::vec3(0.0, 1.1, 0.0));
+                    snowFlakes[i].snowFlakeShape.scale = glm::scale(snowFlakes[i].snowFlakeShape.scale, glm::vec3(FLAKE_SCALE, FLAKE_SCALE, 0.0));
+                    snowFlakes[i].snowFlakeShape.trans = glm::translate(snowFlakes[i].snowFlakeShape.trans, glm::vec3(0.0, FLAKE_POS_X, 0.0));
                     
                     // Randomly decide the x co-ordinate of the shape
                     float random = rdmNumGen();
@@ -360,36 +534,9 @@ struct scene {
     }
 };
 
-// HELPER FUNCTIONS //
-
-/**
- * Randomly generates a number between -1 to 1 
- * @return float
- */
-
-GLuint make_texture(const chicken3421::image_t &tex_img) {
-    GLint format = tex_img.n_channels == 3 ? GL_RGB : GL_RGBA;
-
-    // Enabling transparent pixels
-    glEnable( GL_BLEND );
-    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-
-    GLuint tex;
-    glGenTextures(1, &tex);
-
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, format, tex_img.width, tex_img.height, 0, format, GL_UNSIGNED_BYTE, tex_img.data);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    return tex;
-}
+///////////////////////////
+// MORE HELPER FUNCTIONS //
+///////////////////////////
 
 shapeObject createShape(std::vector<vertexGroup> vert) {
     GLuint vao;
@@ -398,11 +545,13 @@ shapeObject createShape(std::vector<vertexGroup> vert) {
     GLuint vbo;
     glGenBuffers(1, &vbo);
 
+    // Binding and enabling Vertex Array Objects and Buffer Objects
     glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
     glBufferData(GL_ARRAY_BUFFER, (GLintptr)(sizeof(vertexGroup) * vert.size()), vert.data(), GL_STATIC_DRAW);
 
+    // Pointing to first 4 = vertex co-ordinates; next 2 = texture co=ordinates
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(vertexGroup), (void *)(0 + offsetof(vertexGroup, vertexCoords)));
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vertexGroup), (void *)(0 + offsetof(vertexGroup, textureCoords)));
  
@@ -449,6 +598,21 @@ shapeObject createBackground() {
     };
 
     return createShape(vert);
+}
+
+shapeObject createParallaxLoop() {
+    std::vector<vertexGroup> vert = {
+        {{ 2, 1, 0, 1 }, {2, 1.0}},      // top-right
+        {{ 2, -1, 0, 1 }, {2, 0.0}},        // bottom-right
+        {{ -2, -1, 0, 1 }, {0.0, 0.0}},             // bottom-left
+
+        {{ 2, 1, 0, 1 }, {2, 1.0}},           // top-right
+        {{ -2, -1, 0, 1 }, {0.0, 0.0}},           // bottom-left
+        {{ -2, 1, 0, 1 }, {0.0, 1.0}},           // top-left
+    };
+    shapeObject returnObj = createShape(vert);
+    returnObj.trans = glm::translate(returnObj.trans, glm::vec3(0.0, TREE_LOOP_POS_Y, 0.0));
+    return returnObj;
 }
 
 snowFlakeObject createSnowFlake() {
@@ -512,23 +676,24 @@ shapeObject createGround(int totalRepeats) {
 int main() {
     stbi_set_flip_vertically_on_load(true);
 
-    GLFWwindow *win = chicken3421::make_opengl_window(SCREEN_WIDTH, SCREEN_HEIGHT, "Assignment 1 - Minecraft Nightier Night");
+    GLFWwindow *win = chicken3421::make_opengl_window(SCREEN_WIDTH, SCREEN_HEIGHT, APP_TITLE);
 
-    GLuint vs = chicken3421::make_shader("res/shaders/vert.glsl", GL_VERTEX_SHADER);
-    GLuint fs = chicken3421::make_shader("res/shaders/frag.glsl", GL_FRAGMENT_SHADER);
+    GLuint vertShader = chicken3421::make_shader("res/shaders/vert.glsl", GL_VERTEX_SHADER);
+    GLuint fragShader = chicken3421::make_shader("res/shaders/frag.glsl", GL_FRAGMENT_SHADER);
 
     scene sceneObjects;
 
     // Loading in images //
     // Snowy ground
-    chicken3421::image_t ground = chicken3421::load_image("res/img/snowyGroundTexture.png");
+    chicken3421::image_t ground = makeImage("res/img/snowyGroundTexture.png");
     // Backdrop
-    chicken3421::image_t sky = chicken3421::load_image("res/img/nightSkyTexture.png");
-    chicken3421::image_t parallax = chicken3421::load_image("res/img/mountainParallax.png");
-    // Snowflake variant A + B
-    chicken3421::image_t snowFlakeA = chicken3421::load_image("res/img/snowFlakeATexture.png");
-    chicken3421::image_t snowFlakeB = chicken3421::load_image("res/img/snowFlakeBTexture.png");
-
+    chicken3421::image_t overlay = makeImage("res/img/overlay.png");
+    chicken3421::image_t cloudsImg = makeImage("res/img/cloudsTexture.png");
+    chicken3421::image_t treeLoopImg = makeImage("res/img/treeParallax.png");
+    // Snowflake variant A + B + C
+    chicken3421::image_t snowFlakeA = makeImage("res/img/snowFlakeATexture.png");
+    chicken3421::image_t snowFlakeB = makeImage("res/img/snowFlakeBTexture.png");
+    chicken3421::image_t snowFlakeC = makeImage("res/img/snowFlakeCTexture.png");
 
     // Shape making //
     // Creating the focal point Goat and set a pointer to that goat
@@ -539,52 +704,111 @@ int main() {
 
     // Creating the shape for the background
     shapeObject backgroundObj = createBackground();
-    backgroundObj.textureID = make_texture(sky);
     sceneObjects.background = backgroundObj;
+    sceneObjects.tickSky();
+
+    // Creating the shape for the clouds
+    shapeObject cloudsObj = createBackground();
+    cloudsObj.textureID = makeTexture(cloudsImg);
+    sceneObjects.clouds = cloudsObj;
+
+    // Creating the shape for the overlay
+    shapeObject overlayObj = createBackground();
+    overlayObj.textureID = makeTexture(overlay);
+    sceneObjects.overlay = overlayObj;
+
+    // Creating the shape for the moon. The moon has a random phase
+    // for each time the code runs
+    shapeObject moonObj = createBackground();
+    switch(rand() % 8) {
+        case 0:
+            moonObj.textureID = makeTexture(makeImage("res/img/moon/FirstQuater.png"));
+            break;
+        case 1:
+            moonObj.textureID = makeTexture(makeImage("res/img/moon/Full.png"));
+            break;
+        case 2:
+            moonObj.textureID = makeTexture(makeImage("res/img/moon/NewMoon.png"));
+            break;
+        case 3:
+            moonObj.textureID = makeTexture(makeImage("res/img/moon/ThirdQuater.png"));
+            break;
+        case 4:
+            moonObj.textureID = makeTexture(makeImage("res/img/moon/WaningCrescent.png"));
+            break;
+        case 5:
+            moonObj.textureID = makeTexture(makeImage("res/img/moon/WaningGibbous.png"));
+            break;
+        case 6:
+            moonObj.textureID = makeTexture(makeImage("res/img/moon/WaxingCrescent.png"));
+            break;
+        case 7:
+            moonObj.textureID = makeTexture(makeImage("res/img/moon/WaxingGibbous.png"));
+            break;
+    }
+    moonObj.scale = glm::scale(moonObj.scale, glm::vec3(MOON_SCALE, MOON_SCALE, 0.0));
+    moonObj.trans = glm::translate(moonObj.trans, glm::vec3(MOON_POS_XY, MOON_POS_XY, 0.0));
+    sceneObjects.moon = moonObj;
 
     // Creating the shape for the ground
     shapeObject groundSceneObj = createGround(GROUND_TILES);
-    groundSceneObj.textureID = make_texture(ground);
+    groundSceneObj.textureID = makeTexture(ground);
     sceneObjects.ground = groundSceneObj;
 
     // Creating the shape for the back mountains
     shapeObject parallaxObj = createBackground();
-    parallaxObj.trans = glm::translate(parallaxObj.trans, glm::vec3(1.8, 0.4, 0.0));
-    parallaxObj.textureID = make_texture(parallax);
+    parallaxObj.trans = glm::translate(parallaxObj.trans, glm::vec3(PARALLAX_POS_X, PARALLAX_POS_Y, 0.0));
     sceneObjects.parallaxObj = parallaxObj;
 
-    // Creating the shape for the tree
+    // Creating the shape for the background elements
     sceneObjects.foregroundObjA = createBackgroundElement();
-    // Creating the shape for the snow golem
     sceneObjects.foregroundObjB = createBackgroundElement();
+    sceneObjects.parallaxLoopObj = createParallaxLoop();
+    sceneObjects.parallaxLoopObj.textureID = makeTexture(treeLoopImg);
 
-    // Creating the snowflakes
-    GLuint variantA = make_texture(snowFlakeA);
-    GLuint variantB = make_texture(snowFlakeB);
+    // Creating the snowflakes, with a random texture applied to each snow flake
+    GLuint variantA = makeTexture(snowFlakeA);
+    GLuint variantB = makeTexture(snowFlakeB);
+    GLuint variantC = makeTexture(snowFlakeC);
     for (int i = 0; i < FLAKE_TOTAL; i++) {
         sceneObjects.snowFlakes[i] = createSnowFlake();
-        if (rand() % 2 == 0) {
-            sceneObjects.snowFlakes[i].snowFlakeShape.textureID = variantA;
-        } else {
-            sceneObjects.snowFlakes[i].snowFlakeShape.textureID = variantB;
+        switch (rand() % 3) {
+            case 0:
+                sceneObjects.snowFlakes[i].snowFlakeShape.textureID = variantA;
+                break;
+            case 1:
+                sceneObjects.snowFlakes[i].snowFlakeShape.textureID = variantB;
+                break;
+            case 2:
+                sceneObjects.snowFlakes[i].snowFlakeShape.textureID = variantC;
+                break;
         }
     }
-    sceneObjects.tickSnowFlake();
+    // Ticks the snow flakes FLAKE_TOTAL times so that the snowflakes
+    // start at a more natural position when the animation starts
+    for (int i = 0; i < FLAKE_TOTAL; i++) {
+        sceneObjects.tickSnowFlake();
+    }
 
-    GLuint render_prog = chicken3421::make_program(vs, fs);
+    GLuint renderProgram = chicken3421::make_program(vertShader, fragShader);
 
     // Gets the transform uniform location
-    GLint transformLoc = glGetUniformLocation(render_prog, "transform");
+    GLint transformLoc = glGetUniformLocation(renderProgram, "transform");
     chicken3421::expect(transformLoc != -1, "No uniform variable named: transform in program: " + std::to_string(transformLoc));
 
+    //////////////////////////
     // Setting up callbacks //
-    // Keeps the window at a 1:1 width:height ratio
+    //////////////////////////
+
     glfwSetWindowSizeCallback(win, [](GLFWwindow* window, int width, int height) {
+        // Keeps the window at a 1:1 width:height ratio
+        printMessageTime();
         std::cout << "Window size change detected, adjusting viewport\n";
-        glViewport(0, 0, width, width);
+        glViewport(0, 0, height, height);
     });
-    // Spacebar to jump, A to slow down, D to speed up
+
     glfwSetKeyCallback(win, [](GLFWwindow *win, int key, int scancode, int action, int mods) {
+        // Spacebar to jump, A to slow down, D to speed up
         if (action != GLFW_RELEASE) {
             goatObject *goat = (goatObject *) glfwGetWindowUserPointer(win);
             switch (key) {
@@ -597,30 +821,43 @@ int main() {
                 case GLFW_KEY_D:
                     goat->walkRight();
                     break;
+                case GLFW_KEY_TAB:
+                    // Toggle overlay on or off
+                    printMessageTime();
+                    std::cout << "Overlay set to " << !enableOverlay << "\n";
+                    enableOverlay = !enableOverlay;
+                    break;
             }
         }
     });
 
-    std::list<shapeObject> listOfObjects = sceneObjects.getAllObjects();
+    // Variables to manage when to animate a frame for each scene object
+    using namespace std::chrono;
+    long startLoop = 0, endLoop = 0, deltaTime = TICKS_TO_SECOND;
 
     while (!glfwWindowShouldClose(win)) {
-        glUseProgram(render_prog);
-        using namespace std::chrono;
-        long long now = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
+        
+        startLoop = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
+
+        glUseProgram(renderProgram);
+        
 
         glfwPollEvents();
 
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(0, 0, 0, 1);
-        //glClearColor(std::cos(now/1000), std::sin(now/1000), std::cos(now/1000), 1);
+        // glClearColor(std::cos(now/1000), std::sin(now/1000), std::cos(now/1000), 1);
 
-        if (now % TICKS_TO_SECOND == 0) {
+        // When deltaTime exceeds TICKS_TO_SECOND, animate each scene object
+        if (deltaTime >= TICKS_TO_SECOND) {
             sceneObjects.tickGoat();
             sceneObjects.tickGround();
             sceneObjects.tickFgObjA();
             sceneObjects.tickFgObjB();
             sceneObjects.tickParallax();
             sceneObjects.tickSnowFlake();
+            sceneObjects.tickSky();
+            deltaTime -= TICKS_TO_SECOND;
         }
 
         // Draw all objects in the sceneObjects list
@@ -635,16 +872,27 @@ int main() {
             glDrawArrays(GL_TRIANGLES, 0, obj->totalVertices);
         }
 
-
-        
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindTexture(GL_TEXTURE_2D, 0);
         glUseProgram(0);
 
         glfwSwapBuffers(win);
+
+        // Calculates the time elapsed between start and end of loop and adds it
+        // to the deltaTime.
+        endLoop = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
+        deltaTime += endLoop - startLoop;
     }
 
+    glfwDestroyWindow(win);
+    chicken3421::delete_program(renderProgram);
+    chicken3421::delete_shader(fragShader);
+    chicken3421::delete_shader(vertShader);
+    sceneObjects.deleteAllShapes();
+    deleteAllTexImg();
+    printMessageTime();
+    std::cout << "Closing program\n";
 
     return EXIT_SUCCESS;
 }
