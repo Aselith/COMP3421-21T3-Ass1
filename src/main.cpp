@@ -17,51 +17,69 @@
 
 #include <iostream>
 
-#define SCREEN_WIDTH  1024
-#define SCREEN_HEIGHT 1024
-#define TICKS_TO_SECOND 20
+//////////////////////
+// PROGRAM SETTINGS //
+//////////////////////
 
-#define GROUND_POS_Y -0.8
-#define GROUND_SCALE 0.2
-#define GROUND_TILES 20
+// Application window settings:
+const char *APP_TITLE  = "COMP3421 Assignment 1 - Goat Simulator";
+#define SCREEN_WIDTH     900
+#define SCREEN_HEIGHT    900
 
-#define FG_TIMER 500
-#define PARALLAX_TIMER 4
-#define FG_POS_Y 0.9
-#define FG_SCALE 1.5
-#define PARALLAX_POS_Y 0.4
-#define PARALLAX_POS_X 2.0
-#define MAX_FRAMES_SKY 2
-#define MOON_SCALE 0.2
-#define MOON_POS_XY 0.6
+#define MAIN_MENU_TIMER  300
+#define MAX_FRAMES_MENU  150
 
-#define BG_SPAWN_CHANCE 400
+// Speed of animation:
+#define TICKS_TO_SECOND  20 // Lower value = faster; Higher value = slower;
 
-#define WALKING_SPEED 0.01
+// Ground settings:
+#define GROUND_POS_Y     -0.8 // Y position of the ground
+#define GROUND_SCALE     0.2  // Dimension size of ground
+#define GROUND_TILES     20   // How many tiles are in the shape
 
-#define ANIM_FRAME_LEN 4
-#define AIRBORNE_LEN_MAX 15
-#define MAX_FRAMES_GOAT 8
-#define GOAT_POS_Y -0.18
-#define GOAT_SCALE 0.5
-#define GOAT_JUMP_ROT 5.0f
-#define GOAT_WALK_SPEED 0.015
-#define GOAT_WALK_RANGE 1
+// Background object settings:
+#define FG_TIMER         500  // How long foreground objects last on the screen
+#define PARALLAX_TIMER   4    // How long background objects last = PARALLAX_TIMER * FG_TIMER
+#define FG_POS_Y         0.9  // Y position of the foreground objects
+#define FG_SCALE         1.5  // Size of foreground objects
+#define PARALLAX_POS_Y   0.4  // Y position of background objects
+#define PARALLAX_POS_X   2.0  // X position of background objects
+#define MAX_FRAMES_SKY   2    // How many frames the night sky has
+#define MOON_SCALE       0.2  // Size of the Moon
+#define MOON_POS_XY      0.6  // X and Y position of the Moon
 
-#define FLAKE_TOTAL 500
-#define FLAKE_TIMER 400
-#define FLAKE_ROT_SPEED 5.0f
-#define FLAKE_CHANCE 5
-#define FLAKE_SCALE 0.05
-#define FLAKE_POS_X 1.05
+#define BG_SPAWN_CHANCE  400  // The chance of background spawning (1 / BG_SPAWN_CHANCE)
 
-#define TOTAL_FG_TEX 12
-#define TOTAL_P_TEX 2
-#define TREE_LOOP_POS_Y 0.4
+#define SCROLL_SPEED    0.01 // How fast the objects scroll by the screen
 
-const char *APP_TITLE = "COMP3421 Assignment 1 - Minecraft Nightier Night";
-bool enableOverlay = true;
+#define ANIM_FRAME_LEN   4    // The length of the frames of the Goat's animation
+#define AIRBORNE_LEN_MAX 15   // Total time the Goat is in the air
+#define MAX_FRAMES_GOAT  8    // Total frames of the Goat's animation
+#define GOAT_POS_Y       -0.27// Y position of Goat
+#define GOAT_SCALE       0.4  // Scale of the Goat
+#define GOAT_JUMP_ROT    5.0f // How many degrees the Goat rotates in its jump
+#define GOAT_WALK_SPEED  0.015// How far the Goat moves when "D" is pressed
+#define GOAT_WALK_RANGE  1    // How far from the centre of the screen the Goat can move to
 
+#define TOTAL_SF_TEX     4    // How many possible textures a snowflake can be
+#define FLAKE_TOTAL      800  // How many flakes are present. MUST BE AN EVEN NUMBER
+#define FLAKE_TIMER      2400 // How long the flakes last on the screen
+#define FLAKE_ROT_SPEED  5.0f // How many degrees the flakes rotate
+#define FLAKE_CHANCE     3    // The chance a snow flake spawns every tick (1 / FLAKE_CHANCE)
+#define FLAKE_SCALE      0.03 // How big the flake is
+#define FLAKE_POS_X      1.05 // X position of where the flakes spawn
+#define W_AMPLITUDE      0.01 // Wind's amplitude, controls how crazy the wind is
+#define W_COEFFICIENT  M_PI/8 // Controls how short each wind bursts are
+#define W_VERT_SHIFT    0.005 // Controls how effective each wind bursts are
+
+#define TOTAL_FG_TEX     12   // The total amount of possible foreground textures
+#define TOTAL_P_TEX      3    // The total amount of possible parallax textures
+#define TREE_LOOP_POS_Y  0.4  // Y position of the looping trees in the background
+
+bool enableOverlay = true;    // Controls whether to render the overlay or not
+bool gameState = false;
+
+// Keeps track of every image and textures created in the code
 std::list<chicken3421::image_t> listOfEveryImage;
 std::list<GLuint> listOfEveryTexID;
 
@@ -126,12 +144,18 @@ void printMessageTime() {
 
 void deleteAllTexImg() {
     while (listOfEveryTexID.size() > 0) {
+        /*
+        printMessageTime();
         std::cout << "Deleted tex: " << &listOfEveryTexID.front() << "\n";
+        */
         glDeleteTextures(1, &listOfEveryTexID.front());
         listOfEveryTexID.pop_front();
     }
     while (listOfEveryImage.size() > 0) {
+        /*
+        printMessageTime();
         std::cout << "Deleted img: " << listOfEveryImage.front().data << "\n";
+        */
         chicken3421::delete_image(listOfEveryImage.front());
         listOfEveryImage.pop_front();
     }
@@ -266,11 +290,11 @@ struct snowFlakeObject {
     bool rotDirection = (rand() % 2 == 0);
     float rotSpeed = FLAKE_ROT_SPEED + abs(rdmNumGen());
     float velMultiplier = 0.1 + abs(rdmNumGen());
+    float velX = -0.01 * (abs(rdmNumGen()));
 };
 
 struct scene {
-    shapeObject overlay;
-    shapeObject background;
+    shapeObject mainMenu, overlay, background;
     shapeObject moon;
     shapeObject clouds;
     shapeObject ground;
@@ -282,7 +306,7 @@ struct scene {
     goatObject goat;
 
     private:
-        float translatedGroundPos = 0, translatedParallaxLoopPos = 0;
+        float translatedGroundPos = 0, translatedParallaxLoopPos = 0, mainMenuTimer = MAIN_MENU_TIMER;
 
         int fgObjATimer = FG_TIMER;
         int fgObjBTimer = FG_TIMER;
@@ -291,9 +315,13 @@ struct scene {
         bool fgObjBSpawned = false;
         bool pallxSpawned = false;
 
+        double sinCurveX = 0;
+
         GLuint possibleTexID[TOTAL_FG_TEX];
         GLuint possibleParaTexID[TOTAL_P_TEX];
         GLuint skyAnimationFrames[2];
+        GLuint menuAnimationFrames[MAX_FRAMES_MENU];
+        int menuCurrFrame = 0;
 
     public:
     scene() {
@@ -307,12 +335,13 @@ struct scene {
         chicken3421::image_t berryB = makeImage("res/img/berryBushesBTexture.png");
         chicken3421::image_t plainA = makeImage("res/img/plainGrassATexture.png");
         chicken3421::image_t plainB = makeImage("res/img/plainGrassBTexture.png");
-        chicken3421::image_t creeper = makeImage("res/img/creeperTexture.png");
+        chicken3421::image_t rndPrtl = makeImage("res/img/ruinedPortalTexture.png");
         chicken3421::image_t spikeA = makeImage("res/img/iceSpikeATexture.png");
         chicken3421::image_t spikeB = makeImage("res/img/iceSpikeBTexture.png");
 
         chicken3421::image_t parallaxA = makeImage("res/img/mountainAParallax.png");
         chicken3421::image_t parallaxB = makeImage("res/img/mountainBParallax.png");
+        chicken3421::image_t parallaxC = makeImage("res/img/mountainCParallax.png");
 
         chicken3421::image_t sky1 = makeImage("res/img/sky/nightSky_1.png");
         chicken3421::image_t sky2 = makeImage("res/img/sky/nightSky_2.png");
@@ -326,15 +355,29 @@ struct scene {
         possibleTexID[6] = makeTexture(berryB);
         possibleTexID[7] = makeTexture(plainA);
         possibleTexID[8] = makeTexture(plainB);
-        possibleTexID[9] = makeTexture(creeper);
+        possibleTexID[9] = makeTexture(rndPrtl);
         possibleTexID[10] = makeTexture(spikeA);
         possibleTexID[11] = makeTexture(spikeB);
 
         possibleParaTexID[0] = makeTexture(parallaxA);
         possibleParaTexID[1] = makeTexture(parallaxB);
+        possibleParaTexID[2] = makeTexture(parallaxC);
 
         skyAnimationFrames[0] = makeTexture(sky1);
         skyAnimationFrames[1] = makeTexture(sky2);
+
+        // Makes the animation frames for the main menu
+        // If file is not found, use the first frame as the animation
+        for (int i = 0; i < MAX_FRAMES_MENU; i++) {
+            try {
+                std::string fileName = "res/img/mainMenu/mainmenu_";
+                fileName.append(std::to_string(i + 1));
+                fileName.append(".png");
+                menuAnimationFrames[i] = makeTexture(makeImage(fileName.c_str()));
+            } catch (std::runtime_error) {
+                menuAnimationFrames[i] = menuAnimationFrames[0];
+            }
+        }
 
     }
 
@@ -382,7 +425,20 @@ struct scene {
         if (enableOverlay) {
             returnList.emplace_back(overlay);
         }
+        if (mainMenuTimer > 0) {
+            returnList.emplace_back(mainMenu);
+        }
         return returnList;
+    }
+
+    void tickMainMenu() {
+        if (mainMenuTimer > 0 && gameState) {
+            mainMenu.trans = glm::translate(mainMenu.trans, glm::vec3(-SCROLL_SPEED, 0.0, 0.0));
+            mainMenuTimer--;
+        }
+        mainMenu.textureID = menuAnimationFrames[menuCurrFrame];
+        menuCurrFrame++;
+        menuCurrFrame %= MAX_FRAMES_MENU;
     }
 
     void tickGoat() {
@@ -403,8 +459,8 @@ struct scene {
             ground.trans = glm::translate(ground.trans, glm::vec3(0.0, GROUND_POS_Y, 0.0));
             ground.scale = glm::scale(ground.scale, glm::vec3(GROUND_SCALE, GROUND_SCALE, 0.0));
         }
-        ground.trans = glm::translate(ground.trans, glm::vec3(-WALKING_SPEED, 0.0, 0.0));
-        translatedGroundPos -= WALKING_SPEED / 2;
+        ground.trans = glm::translate(ground.trans, glm::vec3(-SCROLL_SPEED, 0.0, 0.0));
+        translatedGroundPos -= SCROLL_SPEED / 2;
 
         // Ticks the tree loop in the background
         if (translatedParallaxLoopPos < 0) {
@@ -414,14 +470,14 @@ struct scene {
             parallaxLoopObj.resetTransforms();
             parallaxLoopObj.trans = glm::translate(parallaxLoopObj.trans, glm::vec3(0.0, TREE_LOOP_POS_Y, 0.0));
         }
-        parallaxLoopObj.trans = glm::translate(parallaxLoopObj.trans, glm::vec3(-WALKING_SPEED / 10, 0.0, 0.0));
-        translatedParallaxLoopPos -= WALKING_SPEED / 10;
+        parallaxLoopObj.trans = glm::translate(parallaxLoopObj.trans, glm::vec3(-SCROLL_SPEED / 10, 0.0, 0.0));
+        translatedParallaxLoopPos -= SCROLL_SPEED / 10;
 
     }
 
     void tickFgObjA() {
         if (fgObjASpawned) {
-            foregroundObjA.trans = glm::translate(foregroundObjA.trans, glm::vec3(-WALKING_SPEED, 0.0, 0.0));
+            foregroundObjA.trans = glm::translate(foregroundObjA.trans, glm::vec3(-SCROLL_SPEED, 0.0, 0.0));
             fgObjATimer -= 1;
             if (fgObjATimer < 0) {
                 printMessageTime();
@@ -444,7 +500,7 @@ struct scene {
 
     void tickFgObjB() {
         if (fgObjBSpawned) {
-            foregroundObjB.trans = glm::translate(foregroundObjB.trans, glm::vec3(-WALKING_SPEED, 0.0, 0.0));
+            foregroundObjB.trans = glm::translate(foregroundObjB.trans, glm::vec3(-SCROLL_SPEED, 0.0, 0.0));
             fgObjBTimer -= 1;
             if (fgObjBTimer < 0) {
                 printMessageTime();
@@ -467,7 +523,7 @@ struct scene {
 
     void tickParallax() {
         if (pallxSpawned) {
-            parallaxObj.trans = glm::translate(parallaxObj.trans, glm::vec3(-(WALKING_SPEED / PARALLAX_TIMER), 0.0, 0.0));
+            parallaxObj.trans = glm::translate(parallaxObj.trans, glm::vec3(-(SCROLL_SPEED / PARALLAX_TIMER), 0.0, 0.0));
             parallaxTimer -= 1;
             if (parallaxTimer < 0) {
                 printMessageTime();
@@ -487,11 +543,25 @@ struct scene {
         }
     }
 
+    double windInfluence() {
+        double amplitude = W_AMPLITUDE;
+        double xCoefficient = W_COEFFICIENT;
+        double period = (2 * M_PI) / xCoefficient;
+        double vertShift = (gameState) ? W_VERT_SHIFT : 0;
+        double sinCurveResult = amplitude * glm::sin(xCoefficient * sinCurveX) + vertShift;
+        if (sinCurveX > period) {
+            sinCurveX -= period;
+        }
+
+        return sinCurveResult;
+    }
+
     void tickSnowFlake() {
         if (rand() % FLAKE_CHANCE == 0) {
             // A chance to make a random snow flake active
             snowFlakes[rand() % FLAKE_TOTAL].isActive = true;
         } 
+        sinCurveX += 0.1;
         for (int i = 0; i < FLAKE_TOTAL; i++) {
             // Loops through all snowflakes to animate them
             if (snowFlakes[i].isActive) {
@@ -513,15 +583,16 @@ struct scene {
                     }
 
                     // Widens the range of where the snowflake can spawn and offsets it to the right
-                    random *= 1.5;
-                    random += 1;
+                    random *= 2;
+                    random += (gameState) ? 1 : 0;
                     snowFlakes[i].snowFlakeShape.trans = glm::translate(snowFlakes[i].snowFlakeShape.trans, glm::vec3(random, 0.0, 0.0));
 
                 } else {
                     // Decreases snowflakes life time and moves it down left direction
                     float fallSpeed = -0.01 * snowFlakes[i].velMultiplier;
+                    float xSpeed = (gameState) ?  -SCROLL_SPEED + snowFlakes[i].velX : 0;
                     snowFlakes[i].flakeLifeTime--;
-                    snowFlakes[i].snowFlakeShape.trans = glm::translate(snowFlakes[i].snowFlakeShape.trans, glm::vec3(-WALKING_SPEED, fallSpeed, 0.0));
+                    snowFlakes[i].snowFlakeShape.trans = glm::translate(snowFlakes[i].snowFlakeShape.trans, glm::vec3(xSpeed + windInfluence(), fallSpeed, 0.0));
                     if (snowFlakes[i].rotDirection) {
                         snowFlakes[i].snowFlakeShape.rot = glm::rotate(snowFlakes[i].snowFlakeShape.rot, glm::radians(snowFlakes[i].rotSpeed), glm::vec3(0.0, 0.0, 1.0));
                     } else {
@@ -567,15 +638,25 @@ shapeObject createShape(std::vector<vertexGroup> vert) {
     return returnShape;
 }
 
+void renderShapeObj(std::list<shapeObject>::iterator obj, GLint transformLoc) {
+    glBindVertexArray(obj->vao);
+    glBindBuffer(GL_ARRAY_BUFFER, obj->vbo);
+    glBindTexture(GL_TEXTURE_2D, obj->textureID);
+    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(obj->trans * obj->rot * obj->scale));
+
+    glDrawArrays(GL_TRIANGLES, 0, obj->totalVertices);
+}
+
 goatObject createGoat() {
     std::vector<vertexGroup> vert = {
-        {{ 1, 1, 0, 1 }, {1, 1.0}},      // top-right
-        {{ 1, -1, 0, 1 }, {1, 0.0}},        // bottom-right
-        {{ -1, -1, 0, 1 }, {0.0, 0.0}},             // bottom-left
-
-        {{ 1, 1, 0, 1 }, {1, 1.0}},           // top-right
-        {{ -1, -1, 0, 1 }, {0.0, 0.0}},           // bottom-left
-        {{ -1, 1, 0, 1 }, {0.0, 1.0}},           // top-left
+        // 1st Triangle
+        {{  1,  1,  0,  1}, {  1,  1}},
+        {{  1, -1,  0,  1}, {  1,  0}},
+        {{ -1, -1,  0,  1}, {  0,  0}},
+        // 2nd Triangle
+        {{  1,  1,  0,  1}, {  1,  1}},
+        {{ -1, -1,  0,  1}, {  0,  0}},
+        {{ -1,  1,  0,  1}, {  0,  1}},
     };
 
     shapeObject returnShape = createShape(vert);
@@ -588,13 +669,14 @@ goatObject createGoat() {
 
 shapeObject createBackground() {
     std::vector<vertexGroup> vert = {
-        {{ 1, 1, 0, 1 }, {1, 1.0}},      // top-right
-        {{ 1, -1, 0, 1 }, {1, 0.0}},        // bottom-right
-        {{ -1, -1, 0, 1 }, {0.0, 0.0}},             // bottom-left
-
-        {{ 1, 1, 0, 1 }, {1, 1.0}},           // top-right
-        {{ -1, -1, 0, 1 }, {0.0, 0.0}},           // bottom-left
-        {{ -1, 1, 0, 1 }, {0.0, 1.0}},           // top-left
+        // 1st Triangle
+        {{  1,  1,  0,  1}, {  1,  1}},
+        {{  1, -1,  0,  1}, {  1,  0}},
+        {{ -1, -1,  0,  1}, {  0,  0}},
+        // 2nd Triangle
+        {{  1,  1,  0,  1}, {  1,  1}},
+        {{ -1, -1,  0,  1}, {  0,  0}},
+        {{ -1,  1,  0,  1}, {  0,  1}},
     };
 
     return createShape(vert);
@@ -602,13 +684,14 @@ shapeObject createBackground() {
 
 shapeObject createParallaxLoop() {
     std::vector<vertexGroup> vert = {
-        {{ 2, 1, 0, 1 }, {2, 1.0}},      // top-right
-        {{ 2, -1, 0, 1 }, {2, 0.0}},        // bottom-right
-        {{ -2, -1, 0, 1 }, {0.0, 0.0}},             // bottom-left
-
-        {{ 2, 1, 0, 1 }, {2, 1.0}},           // top-right
-        {{ -2, -1, 0, 1 }, {0.0, 0.0}},           // bottom-left
-        {{ -2, 1, 0, 1 }, {0.0, 1.0}},           // top-left
+        // 1st Triangle
+        {{  2,  1,  0,  1}, {  2,  1}},
+        {{  2, -1,  0,  1}, {  2,  0}},
+        {{ -2, -1,  0,  1}, {  0,  0}},
+        // 2nd Triangle
+        {{  2,  1,  0,  1}, {  2,  1}},
+        {{ -2, -1,  0,  1}, {  0,  0}},
+        {{ -2,  1,  0,  1}, {  0,  1}},
     };
     shapeObject returnObj = createShape(vert);
     returnObj.trans = glm::translate(returnObj.trans, glm::vec3(0.0, TREE_LOOP_POS_Y, 0.0));
@@ -617,13 +700,14 @@ shapeObject createParallaxLoop() {
 
 snowFlakeObject createSnowFlake() {
     std::vector<vertexGroup> vert = {
-        {{ 1, 1, 0, 1 }, {1, 1.0}},      // top-right
-        {{ 1, -1, 0, 1 }, {1, 0.0}},        // bottom-right
-        {{ -1, -1, 0, 1 }, {0.0, 0.0}},             // bottom-left
-
-        {{ 1, 1, 0, 1 }, {1, 1.0}},           // top-right
-        {{ -1, -1, 0, 1 }, {0.0, 0.0}},           // bottom-left
-        {{ -1, 1, 0, 1 }, {0.0, 1.0}},           // top-left
+        // 1st Triangle
+        {{  1,  1,  0,  1}, {  1,  1}},
+        {{  1, -1,  0,  1}, {  1,  0}},
+        {{ -1, -1,  0,  1}, {  0,  0}},
+        // 2nd Triangle
+        {{  1,  1,  0,  1}, {  1,  1}},
+        {{ -1, -1,  0,  1}, {  0,  0}},
+        {{ -1,  1,  0,  1}, {  0,  1}},
     };
 
     shapeObject returnShape = createShape(vert);
@@ -636,13 +720,14 @@ snowFlakeObject createSnowFlake() {
 
 shapeObject createBackgroundElement() {
     std::vector<vertexGroup> vert = {
-        {{ 0.7, 1, 0, 1 }, {1, 1.0}},      // top-right
-        {{ 0.7, -1, 0, 1 }, {1, 0.0}},        // bottom-right
-        {{ -0.7, -1, 0, 1 }, {0.0, 0.0}},             // bottom-left
-
-        {{ 0.7, 1, 0, 1 }, {1, 1.0}},           // top-right
-        {{ -0.7, -1, 0, 1 }, {0.0, 0.0}},           // bottom-left
-        {{ -0.7, 1, 0, 1 }, {0.0, 1.0}},           // top-left
+        // 1st Triangle
+        {{  0.7,   1,  0,  1}, {  1,  1}},
+        {{  0.7,  -1,  0,  1}, {  1,  0}},
+        {{ -0.7,  -1,  0,  1}, {  0,  0}},
+        // 2nd Triangle
+        {{  0.7,   1,  0,  1}, {  1,  1}},
+        {{ -0.7,  -1,  0,  1}, {  0,  0}},
+        {{ -0.7,   1,  0,  1}, {  0,  1}},
     };
 
     shapeObject returnShape = createShape(vert);
@@ -654,13 +739,14 @@ shapeObject createBackgroundElement() {
 shapeObject createGround(int totalRepeats) {
 
     std::vector<vertexGroup> vert = {
-        {{ totalRepeats, 1, 0, 1 }, {totalRepeats, 1.0}},      // top-right
-        {{ totalRepeats, -1, 0, 1 }, {totalRepeats, 0.0}},        // bottom-right
-        {{ -totalRepeats, -1, 0, 1 }, {0.0, 0.0}},             // bottom-left
-
-        {{ totalRepeats, 1, 0, 1 }, {totalRepeats, 1.0}},           // top-right
-        {{ -totalRepeats, -1, 0, 1 }, {0.0, 0.0}},           // bottom-left
-        {{ -totalRepeats, 1, 0, 1 }, {0.0, 1.0}},           // top-left
+        // 1st Triangle
+        {{  totalRepeats,  1,  0,  1}, {totalRepeats,  1}},      // top-right
+        {{  totalRepeats, -1,  0,  1}, {totalRepeats,  0}},        // bottom-right
+        {{ -totalRepeats, -1,  0,  1}, {           0,  0}},             // bottom-left
+        // 2nd Triangle
+        {{  totalRepeats,  1,  0,  1}, {totalRepeats,  1}},           // top-right
+        {{ -totalRepeats, -1,  0,  1}, {           0,  0}},           // bottom-left
+        {{ -totalRepeats,  1,  0,  1}, {           0,  1}},           // top-left
     };
 
     shapeObject returnShape = createShape(vert);
@@ -668,12 +754,10 @@ shapeObject createGround(int totalRepeats) {
     returnShape.trans = glm::translate(returnShape.trans, glm::vec3(0.0, GROUND_POS_Y, 0.0));
     returnShape.scale = glm::scale(returnShape.scale, glm::vec3(GROUND_SCALE, GROUND_SCALE, 0.0));
     return returnShape;
-
 }
 
-
-
 int main() {
+    // Flips the textures
     stbi_set_flip_vertically_on_load(true);
 
     GLFWwindow *win = chicken3421::make_opengl_window(SCREEN_WIDTH, SCREEN_HEIGHT, APP_TITLE);
@@ -683,19 +767,24 @@ int main() {
 
     scene sceneObjects;
 
+    ///////////////////////
     // Loading in images //
+    ///////////////////////
     // Snowy ground
-    chicken3421::image_t ground = makeImage("res/img/snowyGroundTexture.png");
+    chicken3421::image_t ground      = makeImage("res/img/snowyGroundTexture.png");
     // Backdrop
-    chicken3421::image_t overlay = makeImage("res/img/overlay.png");
-    chicken3421::image_t cloudsImg = makeImage("res/img/cloudsTexture.png");
+    chicken3421::image_t overlay     = makeImage("res/img/overlay.png");
+    chicken3421::image_t cloudsImg   = makeImage("res/img/cloudsTexture.png");
     chicken3421::image_t treeLoopImg = makeImage("res/img/treeParallax.png");
     // Snowflake variant A + B + C
-    chicken3421::image_t snowFlakeA = makeImage("res/img/snowFlakeATexture.png");
-    chicken3421::image_t snowFlakeB = makeImage("res/img/snowFlakeBTexture.png");
-    chicken3421::image_t snowFlakeC = makeImage("res/img/snowFlakeCTexture.png");
+    chicken3421::image_t snowFlakeA  = makeImage("res/img/snowFlakeATexture.png");
+    chicken3421::image_t snowFlakeB  = makeImage("res/img/snowFlakeBTexture.png");
+    chicken3421::image_t snowFlakeC  = makeImage("res/img/snowFlakeCTexture.png");
+    chicken3421::image_t snowFlakeD  = makeImage("res/img/snowFlakeDTexture.png");
 
+    //////////////////
     // Shape making //
+    //////////////////
     // Creating the focal point Goat and set a pointer to that goat
     goatObject goatObj = createGoat();
     goatObj.nextFrame();
@@ -716,6 +805,10 @@ int main() {
     shapeObject overlayObj = createBackground();
     overlayObj.textureID = makeTexture(overlay);
     sceneObjects.overlay = overlayObj;
+
+    // Creating the shape for the main menu
+    shapeObject mainMenuObj = createBackground();
+    sceneObjects.mainMenu = mainMenuObj;
 
     // Creating the shape for the moon. The moon has a random phase
     // for each time the code runs
@@ -770,9 +863,10 @@ int main() {
     GLuint variantA = makeTexture(snowFlakeA);
     GLuint variantB = makeTexture(snowFlakeB);
     GLuint variantC = makeTexture(snowFlakeC);
+    GLuint variantD = makeTexture(snowFlakeD);
     for (int i = 0; i < FLAKE_TOTAL; i++) {
         sceneObjects.snowFlakes[i] = createSnowFlake();
-        switch (rand() % 3) {
+        switch (rand() % TOTAL_SF_TEX) {
             case 0:
                 sceneObjects.snowFlakes[i].snowFlakeShape.textureID = variantA;
                 break;
@@ -781,6 +875,9 @@ int main() {
                 break;
             case 2:
                 sceneObjects.snowFlakes[i].snowFlakeShape.textureID = variantC;
+                break;
+            case 3:
+                sceneObjects.snowFlakes[i].snowFlakeShape.textureID = variantD;
                 break;
         }
     }
@@ -810,8 +907,12 @@ int main() {
     glfwSetKeyCallback(win, [](GLFWwindow *win, int key, int scancode, int action, int mods) {
         // Spacebar to jump, A to slow down, D to speed up
         if (action != GLFW_RELEASE) {
+            gameState = true;
             goatObject *goat = (goatObject *) glfwGetWindowUserPointer(win);
             switch (key) {
+                case GLFW_KEY_ESCAPE:
+                    glfwSetWindowShouldClose(win, GLFW_TRUE);
+                    break;
                 case GLFW_KEY_SPACE:
                     goat->jump();
                     break;
@@ -850,13 +951,16 @@ int main() {
 
         // When deltaTime exceeds TICKS_TO_SECOND, animate each scene object
         if (deltaTime >= TICKS_TO_SECOND) {
-            sceneObjects.tickGoat();
-            sceneObjects.tickGround();
-            sceneObjects.tickFgObjA();
-            sceneObjects.tickFgObjB();
-            sceneObjects.tickParallax();
+            if (gameState) {
+                sceneObjects.tickGoat();
+                sceneObjects.tickGround();
+                sceneObjects.tickFgObjA();
+                sceneObjects.tickFgObjB();
+                sceneObjects.tickParallax();
+                sceneObjects.tickSky();
+            }
+            sceneObjects.tickMainMenu();
             sceneObjects.tickSnowFlake();
-            sceneObjects.tickSky();
             deltaTime -= TICKS_TO_SECOND;
         }
 
@@ -864,12 +968,7 @@ int main() {
         std::list<shapeObject> listOfObjects = sceneObjects.getAllObjects();
 
         for (std::list<shapeObject>::iterator obj = listOfObjects.begin(); obj != listOfObjects.end(); obj++) {
-            glBindVertexArray(obj->vao);
-            glBindBuffer(GL_ARRAY_BUFFER, obj->vbo);
-            glBindTexture(GL_TEXTURE_2D, obj->textureID);
-            glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(obj->trans * obj->rot * obj->scale));
-
-            glDrawArrays(GL_TRIANGLES, 0, obj->totalVertices);
+            renderShapeObj(obj, transformLoc);
         }
 
         glBindVertexArray(0);
