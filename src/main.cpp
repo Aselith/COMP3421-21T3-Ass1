@@ -47,6 +47,7 @@ const char *APP_TITLE  = "COMP3421 Assignment 1 - Goat Simulator";
 #define MAX_FRAMES_SKY   2    // How many frames the night sky has
 #define MOON_SCALE       0.2  // Size of the Moon
 #define MOON_POS_XY      0.6  // X and Y position of the Moon
+#define FG_COOLDOWN      120  // How long inbetween spawning foreground objects
 
 #define BG_SPAWN_CHANCE  400  // The chance of background spawning (1 / BG_SPAWN_CHANCE)
 
@@ -62,10 +63,10 @@ const char *APP_TITLE  = "COMP3421 Assignment 1 - Goat Simulator";
 #define GOAT_WALK_RANGE  1    // How far from the centre of the screen the Goat can move to
 
 #define TOTAL_SF_TEX     4    // How many possible textures a snowflake can be
-#define FLAKE_TOTAL      800  // How many flakes are present. MUST BE AN EVEN NUMBER
-#define FLAKE_TIMER      2400 // How long the flakes last on the screen
+#define FLAKE_TOTAL      900  // How many flakes are present. MUST BE AN EVEN NUMBER
+#define FLAKE_TIMER      1300 // How long the flakes last on the screen
 #define FLAKE_ROT_SPEED  5.0f // How many degrees the flakes rotate
-#define FLAKE_CHANCE     3    // The chance a snow flake spawns every tick (1 / FLAKE_CHANCE)
+#define FLAKE_CHANCE     2    // The chance a snow flake spawns every tick (1 / FLAKE_CHANCE)
 #define FLAKE_SCALE      0.03 // How big the flake is
 #define FLAKE_POS_X      1.05 // X position of where the flakes spawn
 #define W_AMPLITUDE      0.01 // Wind's amplitude, controls how crazy the wind is
@@ -73,7 +74,7 @@ const char *APP_TITLE  = "COMP3421 Assignment 1 - Goat Simulator";
 #define W_VERT_SHIFT    0.005 // Controls how effective each wind bursts are
 
 #define TOTAL_FG_TEX     12   // The total amount of possible foreground textures
-#define TOTAL_P_TEX      3    // The total amount of possible parallax textures
+#define TOTAL_P_TEX      4    // The total amount of possible parallax textures
 #define TREE_LOOP_POS_Y  0.4  // Y position of the looping trees in the background
 
 bool enableOverlay = true;    // Controls whether to render the overlay or not
@@ -137,8 +138,9 @@ void printMessageTime() {
     auto currTime = time(0);
     char *chrTime = std::ctime(&currTime);
     std::string strTime(chrTime);
+    // Removes the endline character from the string
     strTime.pop_back();
-    std::cout << "[" << strTime << "] ";
+    std::cout << "\u001b[32m[" << strTime.c_str() << "]\033[0m ";
     return;
 }
 
@@ -314,6 +316,7 @@ struct scene {
         bool fgObjASpawned = false;
         bool fgObjBSpawned = false;
         bool pallxSpawned = false;
+        int coolDownTimer = 1;
 
         double sinCurveX = 0;
 
@@ -326,25 +329,27 @@ struct scene {
     public:
     scene() {
         // Loading in all possible textures
-        chicken3421::image_t treeA = makeImage("res/img/treeATexture.png");
-        chicken3421::image_t treeB = makeImage("res/img/treeBTexture.png");
-        chicken3421::image_t golemA = makeImage("res/img/snowGolemATexture.png");
-        chicken3421::image_t golemB = makeImage("res/img/snowGolemBTexture.png");
-        chicken3421::image_t mossyPile = makeImage("res/img/mossyPileTexture.png");
-        chicken3421::image_t berryA = makeImage("res/img/berryBushesATexture.png");
-        chicken3421::image_t berryB = makeImage("res/img/berryBushesBTexture.png");
-        chicken3421::image_t plainA = makeImage("res/img/plainGrassATexture.png");
-        chicken3421::image_t plainB = makeImage("res/img/plainGrassBTexture.png");
-        chicken3421::image_t rndPrtl = makeImage("res/img/ruinedPortalTexture.png");
-        chicken3421::image_t spikeA = makeImage("res/img/iceSpikeATexture.png");
-        chicken3421::image_t spikeB = makeImage("res/img/iceSpikeBTexture.png");
+        using namespace chicken3421;
+        image_t treeA = makeImage("res/img/treeATexture.png");
+        image_t treeB = makeImage("res/img/treeBTexture.png");
+        image_t golemA = makeImage("res/img/snowGolemATexture.png");
+        image_t golemB = makeImage("res/img/snowGolemBTexture.png");
+        image_t mossyPile = makeImage("res/img/mossyPileTexture.png");
+        image_t berryA = makeImage("res/img/berryBushesATexture.png");
+        image_t berryB = makeImage("res/img/berryBushesBTexture.png");
+        image_t plainA = makeImage("res/img/plainGrassATexture.png");
+        image_t plainB = makeImage("res/img/plainGrassBTexture.png");
+        image_t rndPrtl = makeImage("res/img/ruinedPortalTexture.png");
+        image_t spikeA = makeImage("res/img/iceSpikeATexture.png");
+        image_t spikeB = makeImage("res/img/iceSpikeBTexture.png");
 
-        chicken3421::image_t parallaxA = makeImage("res/img/mountainAParallax.png");
-        chicken3421::image_t parallaxB = makeImage("res/img/mountainBParallax.png");
-        chicken3421::image_t parallaxC = makeImage("res/img/mountainCParallax.png");
+        image_t parallaxA = makeImage("res/img/mountainAParallax.png");
+        image_t parallaxB = makeImage("res/img/mountainBParallax.png");
+        image_t parallaxC = makeImage("res/img/mountainCParallax.png");
+        image_t parallaxD = makeImage("res/img/mountainDParallax.png");
 
-        chicken3421::image_t sky1 = makeImage("res/img/sky/nightSky_1.png");
-        chicken3421::image_t sky2 = makeImage("res/img/sky/nightSky_2.png");
+        image_t sky1 = makeImage("res/img/sky/nightSky_1.png");
+        image_t sky2 = makeImage("res/img/sky/nightSky_2.png");
 
         possibleTexID[0] = makeTexture(treeA);
         possibleTexID[1] = makeTexture(treeB);
@@ -362,6 +367,7 @@ struct scene {
         possibleParaTexID[0] = makeTexture(parallaxA);
         possibleParaTexID[1] = makeTexture(parallaxB);
         possibleParaTexID[2] = makeTexture(parallaxC);
+        possibleParaTexID[3] = makeTexture(parallaxD);
 
         skyAnimationFrames[0] = makeTexture(sky1);
         skyAnimationFrames[1] = makeTexture(sky2);
@@ -431,6 +437,27 @@ struct scene {
         return returnList;
     }
 
+    void tickAll() {
+        // Tick following objects only when gameState is true
+        if (gameState) {
+            if (coolDownTimer > 0) {
+                if (coolDownTimer == 1) {
+                    printMessageTime();
+                    std::cout << "Ready to spawn another foreground object\n"; 
+                }
+                coolDownTimer--;
+            }
+            tickGoat();
+            tickGround();
+            tickFgObjA();
+            tickFgObjB();
+            tickParallax();
+            tickSky();
+        }
+        tickMainMenu();
+        tickSnowFlake();
+    }
+
     void tickMainMenu() {
         if (mainMenuTimer > 0 && gameState) {
             mainMenu.trans = glm::translate(mainMenu.trans, glm::vec3(-SCROLL_SPEED, 0.0, 0.0));
@@ -452,8 +479,8 @@ struct scene {
     void tickGround() {
         // Ticks the immediate ground
         if (translatedGroundPos < 0) {
-            printMessageTime();
-            std::cout << "Reset ground\n";
+            // printMessageTime();
+            // std::cout << "Reset ground\n";
             translatedGroundPos = 1;
             ground.resetTransforms();
             ground.trans = glm::translate(ground.trans, glm::vec3(0.0, GROUND_POS_Y, 0.0));
@@ -464,8 +491,8 @@ struct scene {
 
         // Ticks the tree loop in the background
         if (translatedParallaxLoopPos < 0) {
-            printMessageTime();
-            std::cout << "Reset tree loop\n";
+            // printMessageTime();
+            // std::cout << "Reset tree loop\n";
             translatedParallaxLoopPos = 1;
             parallaxLoopObj.resetTransforms();
             parallaxLoopObj.trans = glm::translate(parallaxLoopObj.trans, glm::vec3(0.0, TREE_LOOP_POS_Y, 0.0));
@@ -489,7 +516,8 @@ struct scene {
                 fgObjASpawned = false;
             }
         } else {
-            if (rand() % BG_SPAWN_CHANCE == 0) {
+            if (rand() % BG_SPAWN_CHANCE == 0 && coolDownTimer == 0) {
+                coolDownTimer = FG_COOLDOWN;
                 foregroundObjA.textureID = possibleTexID[rand() % TOTAL_FG_TEX];
                 printMessageTime();
                 std::cout << "ObjA spawned with texture ID: " << foregroundObjA.textureID << "\n";
@@ -512,7 +540,8 @@ struct scene {
                 fgObjBSpawned = false;
             }
         } else {
-            if (rand() % BG_SPAWN_CHANCE == 3) {
+            if (rand() % BG_SPAWN_CHANCE == 3 && coolDownTimer == 0) {
+                coolDownTimer = FG_COOLDOWN;
                 foregroundObjB.textureID = possibleTexID[rand() % TOTAL_FG_TEX];
                 printMessageTime();
                 std::cout << "ObjB spawned with texture ID: " << foregroundObjB.textureID << "\n";
@@ -881,9 +910,9 @@ int main() {
                 break;
         }
     }
-    // Ticks the snow flakes FLAKE_TOTAL times so that the snowflakes
+    // Ticks the snow flakes 200 times so that the snowflakes
     // start at a more natural position when the animation starts
-    for (int i = 0; i < FLAKE_TOTAL; i++) {
+    for (int i = 0; i < 200; i++) {
         sceneObjects.tickSnowFlake();
     }
 
@@ -951,16 +980,7 @@ int main() {
 
         // When deltaTime exceeds TICKS_TO_SECOND, animate each scene object
         if (deltaTime >= TICKS_TO_SECOND) {
-            if (gameState) {
-                sceneObjects.tickGoat();
-                sceneObjects.tickGround();
-                sceneObjects.tickFgObjA();
-                sceneObjects.tickFgObjB();
-                sceneObjects.tickParallax();
-                sceneObjects.tickSky();
-            }
-            sceneObjects.tickMainMenu();
-            sceneObjects.tickSnowFlake();
+            sceneObjects.tickAll();
             deltaTime -= TICKS_TO_SECOND;
         }
 
