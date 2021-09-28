@@ -22,7 +22,7 @@
 //////////////////////
 
 // Application window settings:
-const char *APP_TITLE  = "COMP3421 Assignment 1 - Goat Simulator";
+const char *APP_TITLE  = "Minecraft: Goat Simulator - COMP3421 OpenGL Assignment 1";
 #define SCREEN_WIDTH     900
 #define SCREEN_HEIGHT    900
 
@@ -380,7 +380,7 @@ struct scene {
         bool fgObjASpawned = false;
         bool fgObjBSpawned = false;
         bool pallxSpawned = false;
-        int coolDownTimer = 1;
+        int coolDownTimer = 0;
         float sinCurveX = 0;
 
         GLuint possibleTexID[TOTAL_FG_TEX];
@@ -915,10 +915,15 @@ int main() {
                 break;
         }
     }
-    // Ticks the snow flakes 200 times so that the snowflakes
-    // start at a more natural position when the animation starts
-    for (int i = 0; i < 200; i++) {
-        sceneObjects.tickSnowFlake();
+    // Tick a few ticks ahead so that the first rendered frame has a chance
+    // to not look so empty
+    for (int i = 0; i < 450; i++) {
+        if (rand() % 2 == 0) {
+            sceneObjects.tickSnowFlake();
+        }
+        sceneObjects.tickFgObjA();
+        sceneObjects.tickFgObjB();
+        sceneObjects.tickParallax();
     }
 
     GLuint renderProgram = chicken3421::make_program(vertShader, fragShader);
@@ -980,7 +985,7 @@ int main() {
         glfwPollEvents();
 
         glClear(GL_COLOR_BUFFER_BIT);
-        glClearColor(0, 0, 0, 1);
+        glClearColor(1, 1, 1, 1);
         // glClearColor(std::cos(now/1000), std::sin(now/1000), std::cos(now/1000), 1);
 
         // When deltaTime exceeds TICKS_TO_SECOND, animate each scene object
