@@ -1109,8 +1109,7 @@ int main() {
 
         // Calculates the time elapsed between start and end of loop and adds it
         // to the deltaTime.
-        endLoop = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
-        deltaTime += endLoop - startLoop;
+        deltaTime += time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count() - startLoop;
     }
 
     // Tearing down program once closed
