@@ -115,12 +115,22 @@ std::string appendRdmNum(const std::string &fileName, int minRng, int maxRng) {
     return returnName;
 }
 
+/**
+ * Creates an image with the given filename
+ * @param string
+ * @return chicken3421::image_t
+ */
 chicken3421::image_t makeImage(const std::string &fileName) {
     chicken3421::image_t loadedImage = chicken3421::load_image(fileName);
     listOfEveryImage.push_back(loadedImage);
     return loadedImage;
 }
 
+/**
+ * Creates the texture with the image at the given filename
+ * @param string
+ * @return GLuint texture handler
+ */
 GLuint makeTexture(const std::string &fileName) {
 
     chicken3421::image_t texImg = makeImage(fileName);
@@ -156,6 +166,9 @@ GLuint makeTexture(const std::string &fileName) {
     return tex;
 }
 
+/**
+ * Prints the system time without \n at the end
+ */
 void printMessageTime() {
     auto currTime = time(0);
     char *chrTime = std::ctime(&currTime);
@@ -166,6 +179,10 @@ void printMessageTime() {
     return;
 }
 
+/**
+ * Uses the global variables that contains pointers to all texture IDs
+ * and images and deletes them all
+ */ 
 void deleteAllTexImg() {
     while (listOfEveryTexID.size() > 0) {
         /*
@@ -186,18 +203,22 @@ void deleteAllTexImg() {
 }
 
 // STRUCTS //
-struct vertexGroup {
+struct vert_t {
+    // Contains the vertex and texture co-ordinates of a point in a shape
     glm::vec4 vertexCoords;
     glm::vec2 textureCoords;
 };
 
+/**
+ * Contains all the vertex attribute/buffer objects and the textureID
+ * of an individual shape
+ */
 struct shapeObject {
 
     GLuint vao;
     GLuint vbo;
     GLuint textureID;
-    int totalVertices;
-    std::vector<vertexGroup> vertices;
+    std::vector<vert_t> vertices;
 
     glm::mat4 trans = glm::mat4(1.0f);
     glm::mat4 rot = glm::mat4(1.0f);
@@ -216,19 +237,21 @@ struct shapeObject {
     }
 };
 
+/**
+ * Contains everything related to the goat, including functions to control it
+ * and animate it
+ */
 struct goatObject {
     shapeObject goatShape;
     GLuint goatAnimationFrames[MAX_FRAMES_GOAT];
-    private:
-        int currFrame = 0;
-        int frameLifeTime = 0;
-        bool isAirBorne = false;
-        int airBorneLen = 0;
-        float walkedDistance = 0;
-
-    public:
+private:
+    int currFrame = 0;
+    int frameLifeTime = 0;
+    bool isAirBorne = false;
+    int airBorneLen = 0;
+    float walkedDistance = 0;
+public:
     goatObject() {
-
         // Sets up each frame of the animation
         goatAnimationFrames[0] = makeTexture("res/img/goat/goatTexture_1.png");
         goatAnimationFrames[1] = makeTexture("res/img/goat/goatTexture_4.png");
@@ -240,6 +263,9 @@ struct goatObject {
         goatAnimationFrames[7] = goatAnimationFrames[5];
     }
 
+    /**
+     * Animates the subsequent frame
+     */
     void nextFrame() {
         // Loops through the frames. Each frame lasts ANIM_FRAME_LEN long
         if (!isAirBorne) {
@@ -270,6 +296,9 @@ struct goatObject {
         
     }
 
+    /**
+     * Translate the goat to the right
+     */
     void walkRight() {
         if (walkedDistance < GOAT_WALK_RANGE) {
             walkedDistance += GOAT_WALK_SPEED;
@@ -277,6 +306,9 @@ struct goatObject {
         }
     }
 
+    /**
+     * Translate the goat to the left
+     */
     void walkLeft() {
         if (walkedDistance > -GOAT_WALK_RANGE) {
             walkedDistance += -2 * GOAT_WALK_SPEED;
@@ -284,6 +316,9 @@ struct goatObject {
         }
     }
 
+    /**
+     * Puts the goat in an airborne state
+     */
     void jump() {
         // Toggles goat state to in the air
         if (!isAirBorne) {
@@ -300,6 +335,9 @@ struct goatObject {
     }
 };
 
+/**
+ * Contains all things related to an individual snowflake
+ */
 struct snowFlakeObject {
     shapeObject snowFlakeShape;
     bool isActive = true;
@@ -307,18 +345,29 @@ struct snowFlakeObject {
     // True for anti-clockwise
     // False for clockwise
     bool rotDirection = (rand() % 2 == 0);
+    // Random rotational speed added onto the base speed
     float rotSpeed = FLAKE_ROT_SPEED + abs(rdmNumGen());
+    // Random gravity multiplier (controls how fast the flake falls)
     float velMultiplier = 0.1 + abs(rdmNumGen());
+    // Controls how fast the snowflake scrolls to the left
     float velX = -0.01 * (abs(rdmNumGen()));
 };
 
+/**
+ * Contains all things related to the main menu
+ */
 struct mainMenuScene {
     shapeObject mainMenu, splashText;
     double menuScrollDist = 0, mainMenuTimer = MAIN_MENU_TIMER;
     GLuint menuAnimationFrames[MAX_FRAMES_MENU];
     int menuCurrFrame = 0;
 
+    /**
+     * Sets up all the textures needed for the main menu
+     */
     void setupMenu() {
+        // Uses textures from the mainMenu folder. If texture is not found,
+        // default to the first frame's texture
         for (int i = 0; i < MAX_FRAMES_MENU; i++) {
             try {
                 menuAnimationFrames[i] = makeTexture(appendRdmNum("res/img/mainMenu/mainmenu_", i + 1, i + 1));
@@ -326,9 +375,13 @@ struct mainMenuScene {
                 menuAnimationFrames[i] = menuAnimationFrames[0];
             }
         }
+        // Grabs a random splash text texture from the corresponding folder
         splashText.textureID = makeTexture(appendRdmNum("res/img/mainMenu/splashText/splash_", 1, TOTAL_SPL_TEX));
     }
 
+    /**
+     * Animates the main menu by one fram
+     */
     void tickMainMenu() {
         
         if (gameState) {
@@ -338,9 +391,8 @@ struct mainMenuScene {
         }
         mainMenu.textureID = menuAnimationFrames[menuCurrFrame];
 
-        // Splash text animation
-        float newScale = glm::sin((M_PI * menuCurrFrame) / 20) * SPLASH_AMPLITUDE;
-        newScale++;
+        // Splash text animation modelled with a sin curve
+        float newScale = 1 + glm::sin((M_PI * menuCurrFrame) / 20) * SPLASH_AMPLITUDE;
         resetSplashText();
         splashText.scale = glm::scale(splashText.scale, glm::vec3(newScale, newScale, 0.0));
         splashText.trans = glm::translate(splashText.trans, glm::vec3(menuScrollDist, 0.0, 0.0));
@@ -350,11 +402,23 @@ struct mainMenuScene {
 
     }
 
+    /**
+     * Resets the splash text's current transformations and then repositions it in the
+     * right place on screen again
+     */
     void resetSplashText() {
         splashText.resetTransforms();
         splashText.scale = glm::scale(splashText.scale, glm::vec3(SPLASH_SCALE, SPLASH_SCALE, 0.0));
         splashText.rot = glm::rotate(splashText.rot, glm::radians(SPLASH_ROT), glm::vec3(0.0, 0.0, 1.0));
         splashText.trans = glm::translate(splashText.trans, glm::vec3(SPLASH_POS_X, SPLASH_POS_Y, 0.0));
+    }
+
+    /**
+     * Deletes the shapes that consists of the main menu
+     */
+    void deleteShapes() {
+        mainMenu.deleteSelf();
+        splashText.deleteSelf();
     }
 };
 
@@ -371,23 +435,23 @@ struct scene {
     snowFlakeObject snowFlakes[FLAKE_TOTAL];
     goatObject goat;
 
-    private:
-        float translatedGroundPos = 0, translatedParallaxLoopPos = 0;
+private:
+    float translatedGroundPos = 0, translatedParallaxLoopPos = 0;
 
-        int fgObjATimer = FG_TIMER;
-        int fgObjBTimer = FG_TIMER;
-        int parallaxTimer = PARALLAX_TIMER * FG_TIMER;
-        bool fgObjASpawned = false;
-        bool fgObjBSpawned = false;
-        bool pallxSpawned = false;
-        int coolDownTimer = 0;
-        float sinCurveX = 0;
+    int fgObjATimer = FG_TIMER;
+    int fgObjBTimer = FG_TIMER;
+    int parallaxTimer = PARALLAX_TIMER * FG_TIMER;
+    bool fgObjASpawned = false;
+    bool fgObjBSpawned = false;
+    bool pallxSpawned = false;
+    int coolDownTimer = 0;
+    float sinCurveX = 0;
 
-        GLuint possibleTexID[TOTAL_FG_TEX];
-        GLuint possibleParaTexID[TOTAL_P_TEX];
-        GLuint skyAnimationFrames[2];
+    GLuint possibleTexID[TOTAL_FG_TEX];
+    GLuint possibleParaTexID[TOTAL_P_TEX];
+    GLuint skyAnimationFrames[2];
 
-    public:
+public:
     scene() {
         // Loading in all possible textures
 
@@ -414,6 +478,7 @@ struct scene {
     }
 
     void deleteAllShapes() {
+        mainMenuObj.deleteShapes();
         overlay.deleteSelf();
         background.deleteSelf();
         moon.deleteSelf();
@@ -591,7 +656,7 @@ struct scene {
                 pallxSpawned = false;
             }
         } else {
-            if (rand() % BG_SPAWN_CHANCE == 7) {
+            if (rand() % BG_SPAWN_CHANCE == 0) {
                 parallaxObj.textureID = possibleParaTexID[rand() % TOTAL_P_TEX];
                 printMessageTime();
                 std::cout << "Parallax spawned with texture ID: " << parallaxObj.textureID << "\n";
@@ -677,46 +742,47 @@ struct scene {
 // MORE HELPER FUNCTIONS //
 ///////////////////////////
 
-shapeObject createShape(std::vector<vertexGroup> vert) {
-    GLuint vao;
-    glGenVertexArrays(1, &vao);
+/**
+ * Creates a shape struct with the given vertices and returns it
+ * @param std::vector<vert_t> a group of vertices
+ * @return shapeObject
+ */
+shapeObject createShape(std::vector<vert_t> vert) {
 
-    GLuint vbo;
-    glGenBuffers(1, &vbo);
+    shapeObject returnShape;
+    returnShape.vertices = vert;
+
+    glGenVertexArrays(1, &returnShape.vao);
+
+    glGenBuffers(1, &returnShape.vbo);
 
     // Binding and enabling Vertex Array Objects and Buffer Objects
-    glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBindVertexArray(returnShape.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, returnShape.vbo);
 
-    glBufferData(GL_ARRAY_BUFFER, (GLintptr)(sizeof(vertexGroup) * vert.size()), vert.data(), GL_STATIC_DRAW);
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        (GLintptr)(sizeof(vert_t) * returnShape.vertices.size()),
+        returnShape.vertices.data(),
+        GL_STATIC_DRAW
+    );
 
     // Pointing to first 4 = vertex co-ordinates; next 2 = texture co=ordinates
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(vertexGroup), (void *)(0 + offsetof(vertexGroup, vertexCoords)));
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vertexGroup), (void *)(0 + offsetof(vertexGroup, textureCoords)));
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(vert_t), (void *)(0 + offsetof(vert_t, vertexCoords)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vert_t), (void *)(0 + offsetof(vert_t, textureCoords)));
  
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
 
-    shapeObject returnShape;
-    returnShape.vao = vao;
-    returnShape.vbo = vbo;
-    returnShape.vertices = vert;
-    returnShape.totalVertices = vert.size();
-
     return returnShape;
 }
 
-void renderShapeObj(std::list<shapeObject>::iterator obj, GLint transformLoc) {
-    glBindVertexArray(obj->vao);
-    glBindBuffer(GL_ARRAY_BUFFER, obj->vbo);
-    glBindTexture(GL_TEXTURE_2D, obj->textureID);
-    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(obj->trans * obj->rot * obj->scale));
-
-    glDrawArrays(GL_TRIANGLES, 0, obj->totalVertices);
-}
-
+/**
+ * Creates the goat object and translates and scales it appropriately
+ * @return goatObject
+ */
 goatObject createGoat() {
-    std::vector<vertexGroup> vert = {
+    std::vector<vert_t> vert = {
         // 1st Triangle
         {{  1,  1,  0,  1}, {  1,  1}},
         {{  1, -1,  0,  1}, {  1,  0}},
@@ -735,8 +801,12 @@ goatObject createGoat() {
     return returnGoat;
 }
 
+/**
+ * Creates a basic flat square which covers up the entire screen
+ * @return shapeObject
+ */
 shapeObject createFlatSquare() {
-    std::vector<vertexGroup> vert = {
+    std::vector<vert_t> vert = {
         // 1st Triangle
         {{  1,  1,  0,  1}, {  1,  1}},
         {{  1, -1,  0,  1}, {  1,  0}},
@@ -750,8 +820,12 @@ shapeObject createFlatSquare() {
     return createShape(vert);
 }
 
+/**
+ * Creates a large shape with a looping texture
+ * @return shapeObject
+ */
 shapeObject createParallaxLoop() {
-    std::vector<vertexGroup> vert = {
+    std::vector<vert_t> vert = {
         // 1st Triangle
         {{  2,  1,  0,  1}, {  2,  1}},
         {{  2, -1,  0,  1}, {  2,  0}},
@@ -766,8 +840,12 @@ shapeObject createParallaxLoop() {
     return returnObj;
 }
 
+/**
+ * Creates a shape and stores it in a snowFlakeObject
+ * @return snowFlakeObject
+ */
 snowFlakeObject createSnowFlake() {
-    std::vector<vertexGroup> vert = {
+    std::vector<vert_t> vert = {
         // 1st Triangle
         {{  1,  1,  0,  1}, {  1,  1}},
         {{  1, -1,  0,  1}, {  1,  0}},
@@ -782,12 +860,15 @@ snowFlakeObject createSnowFlake() {
     snowFlakeObject returnFlakeObject;
     returnFlakeObject.snowFlakeShape = returnShape;
 
-    // returnShape.trans = glm::translate(returnShape.trans, glm::vec3(2.5, FG_POS_Y, 0.0));
     return returnFlakeObject;
 }
 
-shapeObject createFlatSquareElement() {
-    std::vector<vertexGroup> vert = {
+/**
+ * Creates a background element and scales and translates it offscreen
+ * @return shapeObject
+ */
+shapeObject createBackgroundElement() {
+    std::vector<vert_t> vert = {
         // 1st Triangle
         {{  0.7,   1,  0,  1}, {  1,  1}},
         {{  0.7,  -1,  0,  1}, {  1,  0}},
@@ -798,23 +879,30 @@ shapeObject createFlatSquareElement() {
         {{ -0.7,   1,  0,  1}, {  0,  1}},
     };
 
+    // Scales and translates the background element to offscreen
     shapeObject returnShape = createShape(vert);
     returnShape.scale = glm::scale(returnShape.scale, glm::vec3(FG_SCALE, FG_SCALE, 0.0));
     returnShape.trans = glm::translate(returnShape.trans, glm::vec3(2.5, FG_POS_Y, 0.0));
     return returnShape;
 }
 
+/**
+ * Creates the shape for the ground with repeating textures.
+ * Takes in totalRepeats, refering to how many times the texture should loop
+ * @param int totalRepeats
+ * @return shapeObject
+ */
 shapeObject createGround(int totalRepeats) {
 
-    std::vector<vertexGroup> vert = {
+    std::vector<vert_t> vert = {
         // 1st Triangle
-        {{  totalRepeats,  1,  0,  1}, {totalRepeats,  1}},      // top-right
-        {{  totalRepeats, -1,  0,  1}, {totalRepeats,  0}},        // bottom-right
-        {{ -totalRepeats, -1,  0,  1}, {           0,  0}},             // bottom-left
+        {{  totalRepeats,  1,  0,  1}, {totalRepeats,  1}},
+        {{  totalRepeats, -1,  0,  1}, {totalRepeats,  0}},
+        {{ -totalRepeats, -1,  0,  1}, {           0,  0}},
         // 2nd Triangle
-        {{  totalRepeats,  1,  0,  1}, {totalRepeats,  1}},           // top-right
-        {{ -totalRepeats, -1,  0,  1}, {           0,  0}},           // bottom-left
-        {{ -totalRepeats,  1,  0,  1}, {           0,  1}},           // top-left
+        {{  totalRepeats,  1,  0,  1}, {totalRepeats,  1}},
+        {{ -totalRepeats, -1,  0,  1}, {           0,  0}},
+        {{ -totalRepeats,  1,  0,  1}, {           0,  1}},
     };
 
     shapeObject returnShape = createShape(vert);
@@ -824,6 +912,9 @@ shapeObject createGround(int totalRepeats) {
     return returnShape;
 }
 
+/**
+ * Main function which controls everything
+ */
 int main() {
     // Flips the textures
     stbi_set_flip_vertically_on_load(true);
@@ -832,6 +923,7 @@ int main() {
 
     GLuint vertShader = chicken3421::make_shader("res/shaders/vert.glsl", GL_VERTEX_SHADER);
     GLuint fragShader = chicken3421::make_shader("res/shaders/frag.glsl", GL_FRAGMENT_SHADER);
+    GLuint renderProgram = chicken3421::make_program(vertShader, fragShader);
 
     scene sceneObjects;
 
@@ -846,7 +938,6 @@ int main() {
     sceneObjects.mainMenuObj.splashText = createFlatSquare();
     sceneObjects.mainMenuObj.mainMenu = createFlatSquare();
     sceneObjects.mainMenuObj.setupMenu();
-    
 
     // Creating the focal point Goat and set a pointer to that goat
     goatObject goatObj = createGoat();
@@ -888,8 +979,8 @@ int main() {
     sceneObjects.parallaxObj = parallaxObj;
 
     // Creating the shape for the background elements
-    sceneObjects.foregroundObjA = createFlatSquareElement();
-    sceneObjects.foregroundObjB = createFlatSquareElement();
+    sceneObjects.foregroundObjA = createBackgroundElement();
+    sceneObjects.foregroundObjB = createBackgroundElement();
     sceneObjects.parallaxLoopObj = createParallaxLoop();
     sceneObjects.parallaxLoopObj.textureID = makeTexture("res/img/treeParallax.png");
 
@@ -915,10 +1006,10 @@ int main() {
                 break;
         }
     }
-    // Tick a few ticks ahead so that the first rendered frame has a chance
+    // Tick a few frames ahead so that the first rendered frame has a chance
     // to not look so empty
     for (int i = 0; i < 450; i++) {
-        if (rand() % 2 == 0) {
+        if (rand() % 3 == 0) {
             sceneObjects.tickSnowFlake();
         }
         sceneObjects.tickFgObjA();
@@ -926,16 +1017,11 @@ int main() {
         sceneObjects.tickParallax();
     }
 
-    GLuint renderProgram = chicken3421::make_program(vertShader, fragShader);
-
-    // Gets the transform uniform location
-    GLint transformLoc = glGetUniformLocation(renderProgram, "transform");
-    chicken3421::expect(transformLoc != -1, "No uniform variable named: transform in program: " + std::to_string(transformLoc));
-
     //////////////////////////
     // Setting up callbacks //
     //////////////////////////
 
+    // Window size
     glfwSetWindowSizeCallback(win, [](GLFWwindow* window, int width, int height) {
         // Keeps the window at a 1:1 width:height ratio
         printMessageTime();
@@ -943,8 +1029,9 @@ int main() {
         glViewport(0, 0, height, height);
     });
 
+    // Key presses. Current control scheme is:
+    // A for left, D for right, Space to jump, Tab to toggle vignette, Esc to close program
     glfwSetKeyCallback(win, [](GLFWwindow *win, int key, int scancode, int action, int mods) {
-        // Spacebar to jump, A to slow down, D to speed up
         if (action != GLFW_RELEASE) {
             gameState = true;
             goatObject *goat = (goatObject *) glfwGetWindowUserPointer(win);
@@ -971,36 +1058,48 @@ int main() {
         }
     });
 
+    // Gets the transform uniform location
+    GLint transformLoc = glGetUniformLocation(renderProgram, "transform");
+    chicken3421::expect(transformLoc != -1, "Unknown uniform variable name");
     // Variables to manage when to animate a frame for each scene object
     using namespace std::chrono;
+    std::list<shapeObject> shapeList;     // List which will contain the shapes to be drawn
+    std::list<shapeObject>::iterator obj; // An iterator of the above list
     long startLoop = 0, endLoop = 0, deltaTime = TICKS_TO_SECOND;
 
+    // Main while loop which controls the animation timeline
     while (!glfwWindowShouldClose(win)) {
         
         startLoop = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
 
         glUseProgram(renderProgram);
-        
-
         glfwPollEvents();
 
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(1, 1, 1, 1);
-        // glClearColor(std::cos(now/1000), std::sin(now/1000), std::cos(now/1000), 1);
 
         // When deltaTime exceeds TICKS_TO_SECOND, animate each scene object
         if (deltaTime >= TICKS_TO_SECOND) {
-            sceneObjects.tickAll();
             deltaTime -= TICKS_TO_SECOND;
+            sceneObjects.tickAll();
         }
 
         // Draw all objects in the sceneObjects list
-        std::list<shapeObject> listOfObjects = sceneObjects.getAllObjects();
+        shapeList = sceneObjects.getAllObjects();
 
-        for (std::list<shapeObject>::iterator obj = listOfObjects.begin(); obj != listOfObjects.end(); obj++) {
-            renderShapeObj(obj, transformLoc);
+        for (obj = shapeList.begin(); obj != shapeList.end(); obj++) {
+            // Renders the shape that the iterator is pointing at
+            glBindVertexArray(obj->vao);
+            glBindBuffer(GL_ARRAY_BUFFER, obj->vbo);
+            glBindTexture(GL_TEXTURE_2D, obj->textureID);
+            // Applies the transformations onto the matrices
+            glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(obj->trans * obj->rot * obj->scale));
+
+            glDrawArrays(GL_TRIANGLES, 0, obj->vertices.size());
         }
+        shapeList.clear();
 
+        // Resets vertex arrays and buffers
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -1014,14 +1113,15 @@ int main() {
         deltaTime += endLoop - startLoop;
     }
 
+    // Tearing down program once closed
+    printMessageTime();
+    std::cout << "Closing program\n";
     glfwDestroyWindow(win);
     chicken3421::delete_program(renderProgram);
     chicken3421::delete_shader(fragShader);
     chicken3421::delete_shader(vertShader);
     sceneObjects.deleteAllShapes();
     deleteAllTexImg();
-    printMessageTime();
-    std::cout << "Closing program\n";
 
     return EXIT_SUCCESS;
 }
