@@ -22,80 +22,86 @@
 //////////////////////
 
 // Application window settings:
-const char *APP_TITLE  = "Minecraft: Goat Simulator - COMP3421 OpenGL Assignment 1";
-#define SCREEN_WIDTH     900
-#define SCREEN_HEIGHT    900
-#define SCREENSAVER_MODE false
+const char *APP_TITLE  = "COMP3421 21T3 Assignment 1 [Minecraft: Goat Simulator]";
+#define SCREEN_WIDTH     900   // Screen width of the program
+#define SCREEN_HEIGHT    900   // Screen height of the program
+#define SCREENSAVER_MODE false // Whether to compile this program as a screensaver or not
+#define UNDEF_MOUSE_POS  -1    // The value to represent an undefined mouse position
+#define TOTAL_KEYS       349   // The total amount of possible key presses
 
-#define MAIN_MENU_TIMER  300  
-#define MAX_FRAMES_MENU  119  // How long the main menu animation lasts for (Must be a multiple of two - 1)
-#define AUTO_SKIP_TIME   2800 
-#define TOTAL_SPL_TEX    20   // How many variants of splash text
-#define SPLASH_SCALE     0.30 // Scale of splash text
-#define SPLASH_ROT       12.5f// How much the splash text is askewed
-#define SPLASH_POS_X     0.69 // X position of splash text
-#define SPLASH_POS_Y     0.55 // Y position of splash text
-#define SPLASH_AMPLITUDE 0.07 // How violent the splash text bobs
+// Main menu settings
+#define MAIN_MENU_TIMER  600   // How log the main menu lasts on the window
+#define MAX_FRAMES_MENU  119   // How long the main menu animation lasts for (Must be a multiple of two - 1)
+#define AUTO_SKIP_TIME   2800  // How long until the animation automatically starts (2.8k = 1 minute)
+#define TOTAL_SPL_TEX    20    // How many variants of splash text
+#define SPLASH_SCALE     0.30  // Scale of splash text
+#define SPLASH_ROT       12.5f // How much the splash text is askewed
+#define SPLASH_POS_X     0.69  // X position of splash text
+#define SPLASH_POS_Y     0.55  // Y position of splash text
+#define SPLASH_AMPLITUDE 0.07  // How violent the splash text bobs
 
 // Speed of animation:
-#define TICKS_TO_SECOND  20 // Lower value = faster; Higher value = slower;
+#define TICKS_TO_SECOND  20    // Lower value = faster; Higher value = slower;
 
 // Ground settings:
-#define GROUND_POS_Y     -0.8 // Y position of the ground
-#define GROUND_SCALE     0.2  // Dimension size of ground
-#define GROUND_TILES     20   // How many tiles are in the shape
+#define SCROLL_SPEED    0.01   // How fast the objects scroll by the screen
+#define GROUND_POS_Y     -0.8  // Y position of the ground
+#define GROUND_SCALE     0.2   // Dimension size of ground
+#define GROUND_TILES     20    // How many tiles are in the shape
 
 // Background object settings:
-#define FG_TIMER         500  // How long foreground objects last on the screen
-#define PARALLAX_TIMER   4    // How long background objects last = PARALLAX_TIMER * FG_TIMER
-#define FG_POS_Y         0.9  // Y position of the foreground objects
-#define FG_SCALE         1.5  // Size of foreground objects
-#define PARALLAX_POS_Y   0.4  // Y position of background objects
-#define PARALLAX_POS_X   2.0  // X position of background objects
-#define MAX_FRAMES_SKY   2    // How many frames the night sky has
-#define MOON_SCALE       0.2  // Size of the Moon
-#define MOON_POS_XY      0.6  // X and Y position of the Moon
-#define TOTAL_MOON_TEX   8    // Total possible Moon phases
-#define FG_COOLDOWN      120  // How long inbetween spawning foreground objects
+#define FG_TIMER         500   // How long foreground objects last on the screen
+#define PARALLAX_TIMER   4     // How long background objects last = PARALLAX_TIMER * FG_TIMER
+#define FG_POS_Y         0.9   // Y position of the foreground objects
+#define FG_SCALE         1.5   // Size of foreground objects
+#define PARALLAX_POS_Y   0.4   // Y position of background objects
+#define PARALLAX_POS_X   2.0   // X position of background objects
+#define MAX_FRAMES_SKY   2     // How many frames the night sky has
+#define MOON_SCALE       0.2   // Size of the Moon
+#define MOON_POS_XY      0.6   // X and Y position of the Moon
+#define TOTAL_MOON_TEX   8     // Total possible Moon phases
+#define FG_COOLDOWN      120   // How long inbetween spawning foreground objects
 
-#define BG_SPAWN_CHANCE  400  // The chance of background spawning (1 / BG_SPAWN_CHANCE)
+// Goat settings:
+#define ANIM_FRAME_LEN   4     // The length of the frames of the Goat's animation
+#define AIRBORNE_LEN_MAX 15    // Total time the Goat is in the air
+#define MAX_FRAMES_GOAT  8     // Total frames of the Goat's animation
+#define GOAT_POS_Y       -0.27 // Y position of Goat
+#define GOAT_SCALE       0.4   // Scale of the Goat
+#define GOAT_JUMP_ROT    5.0f  // How many degrees the Goat rotates in its jump
+#define GOAT_WALK_SPEED  0.015 // How far the Goat moves when "D" is pressed
+#define GOAT_WALK_RANGE  1     // How far from the centre of the screen the Goat can move to
 
-#define SCROLL_SPEED    0.01 // How fast the objects scroll by the screen
+// Snow flake settings
+#define TOTAL_SF_TEX     4     // How many possible textures a snowflake can be
+#define FLAKE_TOTAL      900   // How many flakes are present. MUST BE AN EVEN NUMBER
+#define FLAKE_TIMER      1600  // How long the flakes last on the screen
+#define FLAKE_ROT_SPEED  5.0f  // How many degrees the flakes rotate
+#define FLAKE_CHANCE     2     // The chance a snow flake spawns every tick (1 / FLAKE_CHANCE)
+#define FLAKE_SCALE      0.03  // How big the flake is
+#define FLAKE_POS_Y      1.02  // X position of where the flakes spawn
+#define W_AMPLITUDE      0.01  // Wind's amplitude, controls how crazy the wind is
+#define W_COEFFICIENT    8     // Controls how short each wind bursts are. Has pi as the numerator
+#define W_VERT_SHIFT     0.005 // Controls how effective each wind bursts are
 
-#define ANIM_FRAME_LEN   4    // The length of the frames of the Goat's animation
-#define AIRBORNE_LEN_MAX 15   // Total time the Goat is in the air
-#define MAX_FRAMES_GOAT  8    // Total frames of the Goat's animation
-#define GOAT_POS_Y       -0.27// Y position of Goat
-#define GOAT_SCALE       0.4  // Scale of the Goat
-#define GOAT_JUMP_ROT    5.0f // How many degrees the Goat rotates in its jump
-#define GOAT_WALK_SPEED  0.015// How far the Goat moves when "D" is pressed
-#define GOAT_WALK_RANGE  1    // How far from the centre of the screen the Goat can move to
+// Background and Parallax Settings:
+#define BG_SPAWN_CHANCE  400   // The chance of background spawning (1 / BG_SPAWN_CHANCE)
+#define TOTAL_FG_TEX     12    // The total amount of possible foreground textures
+#define TOTAL_P_TEX      4     // The total amount of possible parallax textures
+#define TREE_LOOP_POS_Y  0.4   // Y position of the looping trees in the background
 
-#define TOTAL_SF_TEX     4    // How many possible textures a snowflake can be
-#define FLAKE_TOTAL      900  // How many flakes are present. MUST BE AN EVEN NUMBER
-#define FLAKE_TIMER      1600 // How long the flakes last on the screen
-#define FLAKE_ROT_SPEED  5.0f // How many degrees the flakes rotate
-#define FLAKE_CHANCE     2    // The chance a snow flake spawns every tick (1 / FLAKE_CHANCE)
-#define FLAKE_SCALE      0.03 // How big the flake is
-#define FLAKE_POS_Y      1.02 // X position of where the flakes spawn
-#define W_AMPLITUDE      0.01 // Wind's amplitude, controls how crazy the wind is
-#define W_COEFFICIENT  M_PI/8 // Controls how short each wind bursts are
-#define W_VERT_SHIFT    0.005 // Controls how effective each wind bursts are
-
-#define TOTAL_FG_TEX     12   // The total amount of possible foreground textures
-#define TOTAL_P_TEX      4    // The total amount of possible parallax textures
-#define TREE_LOOP_POS_Y  0.4  // Y position of the looping trees in the background
-
-bool enableOverlay = true;    // Controls whether to render the overlay or not
-bool gameState = false;       // Determines if the main menu should scroll or not
-
-double initialMousePosX = -1, initialMousePosY = -1;
+// Dynamic global variables
+bool enableOverlay = true;     // Controls whether to render the overlay or not
+bool gameState = false;        // Determines if the main menu should scroll or not
+double initialMousePosX = UNDEF_MOUSE_POS, initialMousePosY = UNDEF_MOUSE_POS;
 
 // Keeps track of every image and textures created in the code
 std::list<chicken3421::image_t> listOfEveryImage;
 std::list<GLuint> listOfEveryTexID;
 
-// HELPER FUNCTIONS
+/**
+ * GENERAL HELPER FUNCTIONS
+ */
 
 /**
  * Randomly generates a number between -1 to 1 
@@ -206,15 +212,14 @@ void deleteAllTexImg() {
     }
 }
 
-void enableFullscreen(GLFWwindow *win) {
-    GLFWmonitor *winMonitor = glfwGetPrimaryMonitor();
-    const GLFWvidmode* vidMode = glfwGetVideoMode(winMonitor);
-    // Sets to full screen mode
-    glfwSetWindowMonitor(win, winMonitor, 0, 0, vidMode->width, vidMode->height, vidMode->refreshRate);
-}
-// STRUCTS //
+/**
+ * STRUCTS
+ */
+
+/**
+ * Contains the vertex and texture co-ordinates of a point in a shape
+ */
 struct vert_t {
-    // Contains the vertex and texture co-ordinates of a point in a shape
     glm::vec4 vertexCoords;
     glm::vec2 textureCoords;
 };
@@ -368,10 +373,9 @@ struct snowFlakeObject {
  */
 struct mainMenuScene {
     shapeObject mainMenu, splashText;
-    double menuScrollDist = 0, mainMenuTimer = MAIN_MENU_TIMER;
+    double menuScrollDist = 0, mainMenuTimer = MAIN_MENU_TIMER, sceneScale = 1;
     GLuint menuAnimationFrames[MAX_FRAMES_MENU];
     int menuCurrFrame = 0;
-    float sceneScale = 1;
 
     /**
      * Sets up all the textures needed for the main menu
@@ -429,6 +433,9 @@ struct mainMenuScene {
         splashText.trans = glm::translate(splashText.trans, glm::vec3(SPLASH_POS_X * sceneScale, SPLASH_POS_Y * sceneScale, 0.0));
     }
 
+    /**
+     * Scales the main menu down to fit the width and height
+     */
     void adjustPosition(float width, float height) {
         mainMenu.resetTransforms();
         sceneScale = 1;
@@ -459,6 +466,7 @@ struct scene {
     shapeObject parallaxLoopObj;
     snowFlakeObject snowFlakes[FLAKE_TOTAL];
     goatObject goat;
+    bool isKeyPressed[TOTAL_KEYS];
 
 private:
     float translatedGroundPos = 0, translatedParallaxLoopPos = 0;
@@ -500,8 +508,15 @@ public:
 
         skyAnimationFrames[0] = makeTexture("res/img/sky/nightSky_1.png");
         skyAnimationFrames[1] = makeTexture("res/img/sky/nightSky_2.png");
+
+        for (int i = 0; i < TOTAL_KEYS; i++) {
+            isKeyPressed[i] = false;
+        }
     }
 
+    /**
+     * Tears down all the shapes in the scene
+     */
     void deleteAllShapes() {
         mainMenuObj.deleteShapes();
         overlay.deleteSelf();
@@ -530,6 +545,7 @@ public:
             returnList.emplace_back(parallaxObj);
         }
         for (int i = 0; i < FLAKE_TOTAL / 2; i++) {
+            // Places first half at a lower layer on the list so it appears beneath shapes
             if (snowFlakes[i].isActive) {
                 returnList.emplace_back(snowFlakes[i].snowFlakeShape);
             }
@@ -542,6 +558,7 @@ public:
         }
         returnList.emplace_back(goat.goatShape);
         for (int i = FLAKE_TOTAL / 2; i < FLAKE_TOTAL; i++) {
+            // Places second half at a lower layer on the list so it appears above shapes
             if (snowFlakes[i].isActive) {
                 returnList.emplace_back(snowFlakes[i].snowFlakeShape);
             }
@@ -695,13 +712,12 @@ public:
      * snow flakes
      */
     double windInfluence() {
-        double amplitude = W_AMPLITUDE;
-        double xCoefficient = W_COEFFICIENT;
+        double xCoefficient = M_PI / W_COEFFICIENT;
         double period = (2 * M_PI) / xCoefficient;
         // Only use vertical shift if the animation has started
         double vertShift = (gameState) ? W_VERT_SHIFT : 0;
         // The sin curve
-        double sinCurveResult = amplitude * glm::sin(xCoefficient * sinCurveX) + vertShift;
+        double sinCurveResult = W_AMPLITUDE * glm::sin(xCoefficient * sinCurveX) + vertShift;
         if (sinCurveX > period) {
             // Loops the X axis once it passes the sin curve period
             sinCurveX -= period;
@@ -762,25 +778,71 @@ public:
         }
     }
 
+    /**
+     * Adjusts the positions of scene objects according to the new width/height of the screen
+     */
     void adjustPositions(float width, float height) {
+        // Resets the transformations of cloud and moon
         moon.resetTransforms();
         clouds.resetTransforms();
         mainMenuObj.mainMenu.resetTransforms();
         moon.scale = glm::scale(moon.scale, glm::vec3(MOON_SCALE, MOON_SCALE, 0.0));
         moon.trans = glm::translate(moon.trans, glm::vec3(MOON_POS_XY, MOON_POS_XY, 0.0));
+
+        // Readjusting cloud and moon based on the new width/height
         if (width > height) {
             moon.trans = glm::translate(moon.trans, glm::vec3(0.0, (height - width) / width, 0.0));
             clouds.trans = glm::translate(clouds.trans, glm::vec3(0.0, (height - width) / width, 0.0));
         }
         mainMenuObj.adjustPosition(width, height);
-        
     }
 
+    void checkKeyInputs(GLFWwindow *win) {
+        // Loops through the entire array to check if the key is pressed or not
+        for (int keyNo = 0; keyNo < TOTAL_KEYS; keyNo++) {
+            // If key i is not pressed, skip to the next loop
+            if (!isKeyPressed[keyNo]) continue;
+
+            switch (keyNo) {
+                case GLFW_KEY_ESCAPE:
+                    glfwSetWindowShouldClose(win, GLFW_TRUE);
+                    break;
+                case GLFW_KEY_SPACE:
+                    goat.jump();
+                    // Allows for multiple key presses
+                    break;
+                case GLFW_KEY_A:
+                    goat.walkLeft();
+                    break;
+                case GLFW_KEY_D:
+                    goat.walkRight();
+                    break;
+                case GLFW_KEY_TAB:
+                    // Toggle overlay on or off
+                    printMessageTime();
+                    std::cout << "Overlay set to " << !enableOverlay << "\n";
+                    enableOverlay = !enableOverlay;
+                    isKeyPressed[keyNo] = false;
+                    break;
+                case GLFW_KEY_LEFT_CONTROL:
+                    if (!SCREENSAVER_MODE) {
+                        if (glfwGetWindowAttrib(win, GLFW_MAXIMIZED)) {
+                            glfwRestoreWindow(win);
+                        } else {
+                            glfwMaximizeWindow(win);
+                        }
+                        isKeyPressed[keyNo] = false;
+                    }
+                    break;
+            }
+
+        }
+    }
 };
 
-///////////////////////////
-// MORE HELPER FUNCTIONS //
-///////////////////////////
+/**
+ * HELPER FUNCTIONS RELATED TO CONSTRUCTING SHAPEs
+ */
 
 /**
  * Creates a shape struct with the given vertices and returns it
@@ -959,10 +1021,14 @@ int main() {
     printMessageTime();
     std::cout << "Program start\n";
 
+    // Creates opengl window and sets the window icon
+    GLFWwindow *win = chicken3421::make_opengl_window(SCREEN_WIDTH, SCREEN_HEIGHT, APP_TITLE);
+    chicken3421::image_t goatIcon = makeImage("res/img/goatFavicon.png");
+    GLFWimage faviconImg = {goatIcon.width, goatIcon.height, (unsigned char *)goatIcon.data};
+    glfwSetWindowIcon(win, 1, &faviconImg);
+
     // Flips the textures
     stbi_set_flip_vertically_on_load(true);
-
-    GLFWwindow *win = chicken3421::make_opengl_window(SCREEN_WIDTH, SCREEN_HEIGHT, APP_TITLE);
 
     GLuint vertShader = chicken3421::make_shader("res/shaders/vert.glsl", GL_VERTEX_SHADER);
     GLuint fragShader = chicken3421::make_shader("res/shaders/frag.glsl", GL_FRAGMENT_SHADER);
@@ -1081,52 +1147,37 @@ int main() {
         
     });
 
-    // Key presses. Current control scheme is:
+    // Sets callbacks for key presses. Current control scheme is:
     // A for left, D for right, Space to jump, Tab to toggle vignette, Esc to close program
+    // Left Ctrl to toggle between maximised and minimised window
     glfwSetKeyCallback(win, [](GLFWwindow *win, int key, int scancode, int action, int mods) {
-        if (action != GLFW_RELEASE) {
+
+        // Grabs the window scene
+        scene *sceneObjects = (scene *) glfwGetWindowUserPointer(win);
+
+        // Enables and disables if key is pressed
+        if (action == GLFW_RELEASE) {
+            sceneObjects->isKeyPressed[key] = false;
+        } else if (action == GLFW_PRESS || action == GLFW_REPEAT) {
             if (key != GLFW_KEY_LEFT_CONTROL && !gameState) {
+                // Enables gameState if any key is pressed besides Left Ctrl
                 gameState = true;
             }
-            scene *sceneObjects = (scene *) glfwGetWindowUserPointer(win);
-            switch (key) {
-                case GLFW_KEY_ESCAPE:
-                    glfwSetWindowShouldClose(win, GLFW_TRUE);
-                    break;
-                case GLFW_KEY_SPACE:
-                    sceneObjects->goat.jump();
-                    break;
-                case GLFW_KEY_A:
-                    sceneObjects->goat.walkLeft();
-                    break;
-                case GLFW_KEY_D:
-                    sceneObjects->goat.walkRight();
-                    break;
-                case GLFW_KEY_LEFT_CONTROL:
-                    if (!SCREENSAVER_MODE) {
-                        if (glfwGetWindowAttrib(win, GLFW_MAXIMIZED)) {
-                            glfwRestoreWindow(win);
-                        } else {
-                            glfwMaximizeWindow(win);
-                        }
-                    }
-                    break;
-                case GLFW_KEY_TAB:
-                    // Toggle overlay on or off
-                    printMessageTime();
-                    std::cout << "Overlay set to " << !enableOverlay << "\n";
-                    enableOverlay = !enableOverlay;
-                    break;
-            }
+            sceneObjects->isKeyPressed[key] = true;
         }
+
     });
 
-    // Manages screen saver
+    // If screen saver mode is enabled, make the program full screen and detect for any mouse movements
     if (SCREENSAVER_MODE) {
-        enableFullscreen(win);
+        // Sets to full screen mode
+        GLFWmonitor *winMonitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* vidMode = glfwGetVideoMode(winMonitor);
+        glfwSetWindowMonitor(win, winMonitor, 0, 0, vidMode->width, vidMode->height, vidMode->refreshRate);
+
         // Detects if cursor moves
         glfwSetCursorPosCallback(win, [](GLFWwindow *win,  double xPos, double yPos) {
-            if (initialMousePosX == -1 || initialMousePosY == -1) {
+            if (initialMousePosX == UNDEF_MOUSE_POS || initialMousePosY == UNDEF_MOUSE_POS) {
                 initialMousePosY = yPos; // initialMousePosX is a global variable
                 initialMousePosX = xPos; // initialMousePosY is a global variable
             } else if (initialMousePosX != xPos || initialMousePosY != yPos){
@@ -1135,32 +1186,38 @@ int main() {
             }
         });
 
+        // Hides cursor
+        glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+
         printMessageTime();
         std::cout << "Experimental screensaver mode enabled\n";
-
     }
 
-    glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    /////////////////////////////////////////////////
+    // While loop to control renders and animation //
+    /////////////////////////////////////////////////
 
     // Gets the transform uniform location
     GLint transformLoc = glGetUniformLocation(renderProgram, "transform");
     chicken3421::expect(transformLoc != -1, "Unknown uniform variable name");
+
     // Variables to manage when to animate a frame for each scene object
     using namespace std::chrono;
     std::list<shapeObject> shapeList;     // List which will contain the shapes to be drawn
     std::list<shapeObject>::iterator obj; // An iterator of the above list
-    long startLoop = 0, endLoop = 0, deltaTime = TICKS_TO_SECOND;
+
+    // Time related variables
+    long startLoop = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
+    long endLoop = 0, deltaTime = TICKS_TO_SECOND;
     int autoSkipTimer = AUTO_SKIP_TIME;
 
-    // Main while loop which controls the animation timeline
     while (!glfwWindowShouldClose(win)) {
         
         if (!gameState && autoSkipTimer == 0) {
+            gameState = true;
             printMessageTime();
             std::cout << "Auto-skipped main menu\n";
-            gameState = true;
         }
-        startLoop = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
 
         glUseProgram(renderProgram);
         glfwPollEvents();
@@ -1175,6 +1232,7 @@ int main() {
             }
             deltaTime -= TICKS_TO_SECOND;
             sceneObjects.tickAll();
+            sceneObjects.checkKeyInputs(win);
         }
 
         // Draw all objects in the sceneObjects list
@@ -1202,7 +1260,11 @@ int main() {
 
         // Calculates the time elapsed between start and end of loop and adds it
         // to the deltaTime.
-        deltaTime += time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count() - startLoop;
+        endLoop = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
+        deltaTime += endLoop - startLoop;
+        // Caps deltaTime at 3 times TICKS_TO_SECOND to skip a few frames if the system is struggling
+        deltaTime %= 3 * TICKS_TO_SECOND;
+        startLoop = endLoop;
     }
 
     // Tearing down program once closed
