@@ -28,6 +28,7 @@ const char *APP_TITLE  = "Minecraft: Goat Simulator - COMP3421 OpenGL Assignment
 
 #define MAIN_MENU_TIMER  300  
 #define MAX_FRAMES_MENU  119  // How long the main menu animation lasts for (Must be a multiple of two - 1)
+#define AUTO_SKIP_TIME   2800 
 #define TOTAL_SPL_TEX    20   // How many variants of splash text
 #define SPLASH_SCALE     0.30 // Scale of splash text
 #define SPLASH_ROT       12.5f// How much the splash text is askewed
@@ -71,7 +72,7 @@ const char *APP_TITLE  = "Minecraft: Goat Simulator - COMP3421 OpenGL Assignment
 
 #define TOTAL_SF_TEX     4    // How many possible textures a snowflake can be
 #define FLAKE_TOTAL      900  // How many flakes are present. MUST BE AN EVEN NUMBER
-#define FLAKE_TIMER      1400 // How long the flakes last on the screen
+#define FLAKE_TIMER      1600 // How long the flakes last on the screen
 #define FLAKE_ROT_SPEED  5.0f // How many degrees the flakes rotate
 #define FLAKE_CHANCE     2    // The chance a snow flake spawns every tick (1 / FLAKE_CHANCE)
 #define FLAKE_SCALE      0.03 // How big the flake is
@@ -916,6 +917,9 @@ shapeObject createGround(int totalRepeats) {
  * Main function which controls everything
  */
 int main() {
+    printMessageTime();
+    std::cout << "Program start\n";
+
     // Flips the textures
     stbi_set_flip_vertically_on_load(true);
 
@@ -1026,7 +1030,13 @@ int main() {
         // Keeps the window at a 1:1 width:height ratio
         printMessageTime();
         std::cout << "Window size change detected, adjusting viewport\n";
-        glViewport(0, 0, height, height);
+        int xPos = 0;
+        if (height < width) {
+            xPos = (width - height) / 2;
+        } else {
+            xPos = 0;
+        }
+        glViewport(xPos, 0, height, height);
     });
 
     // Key presses. Current control scheme is:
@@ -1058,6 +1068,7 @@ int main() {
         }
     });
 
+
     // Gets the transform uniform location
     GLint transformLoc = glGetUniformLocation(renderProgram, "transform");
     chicken3421::expect(transformLoc != -1, "Unknown uniform variable name");
@@ -1066,20 +1077,29 @@ int main() {
     std::list<shapeObject> shapeList;     // List which will contain the shapes to be drawn
     std::list<shapeObject>::iterator obj; // An iterator of the above list
     long startLoop = 0, endLoop = 0, deltaTime = TICKS_TO_SECOND;
+    int autoSkipTimer = AUTO_SKIP_TIME;
 
     // Main while loop which controls the animation timeline
     while (!glfwWindowShouldClose(win)) {
         
+        if (!gameState && autoSkipTimer == 0) {
+            printMessageTime();
+            std::cout << "Auto-skipped main menu\n";
+            gameState = true;
+        }
         startLoop = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
 
         glUseProgram(renderProgram);
         glfwPollEvents();
 
         glClear(GL_COLOR_BUFFER_BIT);
-        glClearColor(1, 1, 1, 1);
+        glClearColor(0, 0, 0, 1);
 
         // When deltaTime exceeds TICKS_TO_SECOND, animate each scene object
         if (deltaTime >= TICKS_TO_SECOND) {
+            if (!gameState && autoSkipTimer > 0) {
+                autoSkipTimer -= 1;
+            }
             deltaTime -= TICKS_TO_SECOND;
             sceneObjects.tickAll();
         }
