@@ -25,6 +25,7 @@
 const char *APP_TITLE  = "Minecraft: Goat Simulator - COMP3421 OpenGL Assignment 1";
 #define SCREEN_WIDTH     900
 #define SCREEN_HEIGHT    900
+#define SCREENSAVER_MODE false
 
 #define MAIN_MENU_TIMER  300  
 #define MAX_FRAMES_MENU  119  // How long the main menu animation lasts for (Must be a multiple of two - 1)
@@ -86,7 +87,9 @@ const char *APP_TITLE  = "Minecraft: Goat Simulator - COMP3421 OpenGL Assignment
 #define TREE_LOOP_POS_Y  0.4  // Y position of the looping trees in the background
 
 bool enableOverlay = true;    // Controls whether to render the overlay or not
-bool gameState = false;
+bool gameState = false;       // Determines if the main menu should scroll or not
+
+double initialMousePosX = -1, initialMousePosY = -1;
 
 // Keeps track of every image and textures created in the code
 std::list<chicken3421::image_t> listOfEveryImage;
@@ -203,6 +206,12 @@ void deleteAllTexImg() {
     }
 }
 
+void enableFullscreen(GLFWwindow *win) {
+    GLFWmonitor *winMonitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* vidMode = glfwGetVideoMode(winMonitor);
+    // Sets to full screen mode
+    glfwSetWindowMonitor(win, winMonitor, 0, 0, vidMode->width, vidMode->height, vidMode->refreshRate);
+}
 // STRUCTS //
 struct vert_t {
     // Contains the vertex and texture co-ordinates of a point in a shape
@@ -362,6 +371,7 @@ struct mainMenuScene {
     double menuScrollDist = 0, mainMenuTimer = MAIN_MENU_TIMER;
     GLuint menuAnimationFrames[MAX_FRAMES_MENU];
     int menuCurrFrame = 0;
+    float sceneScale = 1;
 
     /**
      * Sets up all the textures needed for the main menu
@@ -384,13 +394,17 @@ struct mainMenuScene {
      * Animates the main menu by one fram
      */
     void tickMainMenu() {
-        
+        mainMenu.resetTransforms();
         if (gameState) {
-            mainMenu.trans = glm::translate(mainMenu.trans, glm::vec3(-SCROLL_SPEED, 0.0, 0.0));
             menuScrollDist -= SCROLL_SPEED;
+            
+            mainMenu.trans = glm::translate(mainMenu.trans, glm::vec3(menuScrollDist, 0.0, 0.0));
             mainMenuTimer--;
         }
         mainMenu.textureID = menuAnimationFrames[menuCurrFrame];
+
+        // Scales the main menu according to the entire scene sclae
+        mainMenu.scale = glm::scale(mainMenu.scale, glm::vec3(sceneScale, sceneScale, 0.0));
 
         // Splash text animation modelled with a sin curve
         float newScale = 1 + glm::sin((M_PI * menuCurrFrame) / 20) * SPLASH_AMPLITUDE;
@@ -410,8 +424,18 @@ struct mainMenuScene {
     void resetSplashText() {
         splashText.resetTransforms();
         splashText.scale = glm::scale(splashText.scale, glm::vec3(SPLASH_SCALE, SPLASH_SCALE, 0.0));
+        splashText.scale = glm::scale(splashText.scale, glm::vec3(sceneScale, sceneScale, 0.0));
         splashText.rot = glm::rotate(splashText.rot, glm::radians(SPLASH_ROT), glm::vec3(0.0, 0.0, 1.0));
-        splashText.trans = glm::translate(splashText.trans, glm::vec3(SPLASH_POS_X, SPLASH_POS_Y, 0.0));
+        splashText.trans = glm::translate(splashText.trans, glm::vec3(SPLASH_POS_X * sceneScale, SPLASH_POS_Y * sceneScale, 0.0));
+    }
+
+    void adjustPosition(float width, float height) {
+        mainMenu.resetTransforms();
+        sceneScale = 1;
+
+        if (width > height) {
+            sceneScale = ( height / width );
+        }
     }
 
     /**
@@ -737,6 +761,21 @@ public:
             
         }
     }
+
+    void adjustPositions(float width, float height) {
+        moon.resetTransforms();
+        clouds.resetTransforms();
+        mainMenuObj.mainMenu.resetTransforms();
+        moon.scale = glm::scale(moon.scale, glm::vec3(MOON_SCALE, MOON_SCALE, 0.0));
+        moon.trans = glm::translate(moon.trans, glm::vec3(MOON_POS_XY, MOON_POS_XY, 0.0));
+        if (width > height) {
+            moon.trans = glm::translate(moon.trans, glm::vec3(0.0, (height - width) / width, 0.0));
+            clouds.trans = glm::translate(clouds.trans, glm::vec3(0.0, (height - width) / width, 0.0));
+        }
+        mainMenuObj.adjustPosition(width, height);
+        
+    }
+
 };
 
 ///////////////////////////
@@ -930,6 +969,7 @@ int main() {
     GLuint renderProgram = chicken3421::make_program(vertShader, fragShader);
 
     scene sceneObjects;
+    glfwSetWindowUserPointer(win, &sceneObjects);
 
     //////////////////
     // Shape making //
@@ -947,7 +987,6 @@ int main() {
     goatObject goatObj = createGoat();
     goatObj.nextFrame();
     sceneObjects.goat = goatObj;
-    glfwSetWindowUserPointer(win, &sceneObjects.goat);
 
     // Creating the shape for the background
     shapeObject backgroundObj = createFlatSquare();
@@ -967,10 +1006,8 @@ int main() {
     // for each time the code runs
     shapeObject moonObj = createFlatSquare();
     moonObj.textureID = makeTexture(appendRdmNum("res/img/moon/moon_", 1, TOTAL_MOON_TEX));
-
-    moonObj.scale = glm::scale(moonObj.scale, glm::vec3(MOON_SCALE, MOON_SCALE, 0.0));
-    moonObj.trans = glm::translate(moonObj.trans, glm::vec3(MOON_POS_XY, MOON_POS_XY, 0.0));
     sceneObjects.moon = moonObj;
+    sceneObjects.adjustPositions(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // Creating the shape for the ground
     shapeObject groundSceneObj = createGround(GROUND_TILES);
@@ -1027,36 +1064,52 @@ int main() {
 
     // Window size
     glfwSetWindowSizeCallback(win, [](GLFWwindow* window, int width, int height) {
+        scene *sceneObjects = (scene *) glfwGetWindowUserPointer(window);
         // Keeps the window at a 1:1 width:height ratio
         printMessageTime();
         std::cout << "Window size change detected, adjusting viewport\n";
-        int xPos = 0;
         if (height < width) {
-            xPos = (width - height) / 2;
+            // Adjusts so that the scene still fits the rectangular screen naturally
+            glViewport(0, (height - width) / 2, width, width);
+        } else if (height > width) {
+            // Makes sure that the window is not a vertical rectangle
+            glfwSetWindowSize(window, height, height);
         } else {
-            xPos = 0;
+            glViewport(0, 0, height, height);
         }
-        glViewport(xPos, 0, height, height);
+        sceneObjects->adjustPositions(width, height);
+        
     });
 
     // Key presses. Current control scheme is:
     // A for left, D for right, Space to jump, Tab to toggle vignette, Esc to close program
     glfwSetKeyCallback(win, [](GLFWwindow *win, int key, int scancode, int action, int mods) {
         if (action != GLFW_RELEASE) {
-            gameState = true;
-            goatObject *goat = (goatObject *) glfwGetWindowUserPointer(win);
+            if (key != GLFW_KEY_LEFT_CONTROL && !gameState) {
+                gameState = true;
+            }
+            scene *sceneObjects = (scene *) glfwGetWindowUserPointer(win);
             switch (key) {
                 case GLFW_KEY_ESCAPE:
                     glfwSetWindowShouldClose(win, GLFW_TRUE);
                     break;
                 case GLFW_KEY_SPACE:
-                    goat->jump();
+                    sceneObjects->goat.jump();
                     break;
                 case GLFW_KEY_A:
-                    goat->walkLeft();
+                    sceneObjects->goat.walkLeft();
                     break;
                 case GLFW_KEY_D:
-                    goat->walkRight();
+                    sceneObjects->goat.walkRight();
+                    break;
+                case GLFW_KEY_LEFT_CONTROL:
+                    if (!SCREENSAVER_MODE) {
+                        if (glfwGetWindowAttrib(win, GLFW_MAXIMIZED)) {
+                            glfwRestoreWindow(win);
+                        } else {
+                            glfwMaximizeWindow(win);
+                        }
+                    }
                     break;
                 case GLFW_KEY_TAB:
                     // Toggle overlay on or off
@@ -1068,6 +1121,26 @@ int main() {
         }
     });
 
+    // Manages screen saver
+    if (SCREENSAVER_MODE) {
+        enableFullscreen(win);
+        // Detects if cursor moves
+        glfwSetCursorPosCallback(win, [](GLFWwindow *win,  double xPos, double yPos) {
+            if (initialMousePosX == -1 || initialMousePosY == -1) {
+                initialMousePosY = yPos; // initialMousePosX is a global variable
+                initialMousePosX = xPos; // initialMousePosY is a global variable
+            } else if (initialMousePosX != xPos || initialMousePosY != yPos){
+                // Closes window when it detects mouse movement
+                glfwSetWindowShouldClose(win, GLFW_TRUE);
+            }
+        });
+
+        printMessageTime();
+        std::cout << "Experimental screensaver mode enabled\n";
+
+    }
+
+    glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
     // Gets the transform uniform location
     GLint transformLoc = glGetUniformLocation(renderProgram, "transform");
