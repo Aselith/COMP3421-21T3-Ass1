@@ -14,6 +14,7 @@
 
 #include <iostream>
 
+// Required external variables
 extern const bool SCREENSAVER_MODE;
 extern const float FG_COOLDOWN;
 extern const float FG_POS_Y;
@@ -36,6 +37,8 @@ extern const int FLAKE_TIMER;
 extern const int FLAKE_TOTAL;
 extern const int MAX_FRAMES_SKY;
 extern const int PARALLAX_TIMER;
+extern const int SCREEN_HEIGHT;
+extern const int SCREEN_WIDTH;
 extern const int TOTAL_FG_TEX;
 extern const int TOTAL_KEYS;
 extern const int TOTAL_P_TEX;
@@ -162,12 +165,14 @@ public:
         if (mainMenuObj.mainMenuTimer > 0) {
             returnList.emplace_back(mainMenuObj.mainMenu);
             returnList.emplace_back(mainMenuObj.splashText);
+            returnList.emplace_back(mainMenuObj.zID);
         }
         return returnList;
     }
 
     /**
      * Animates everything by one frame
+     * @param gameState whether the game has started scrolling or not
      */
     void tickAll(bool gameState) {
         // Tick following objects only when gameState is true
@@ -321,6 +326,7 @@ public:
     /**
      * Animates the next frame of each individual snowflake
      * and controls whether to spawn one or not
+     * @param gameState whether the game has started scrolling or not
      */
     void tickSnowFlake(bool gameState) {
         if (rand() % FLAKE_CHANCE == 0) {
@@ -390,7 +396,8 @@ public:
     }
 
     /**
-     * Updates all the shapes based on the key inputs
+     * Updates all the shapes based on the key inputs.
+     * Also controls what changes about the scene depending on what key is pressed
      */
     void checkKeyInputs(GLFWwindow *win) {
         // Loops through the entire array to check if the key is pressed or not
@@ -435,11 +442,13 @@ public:
                     enableOverlay = !enableOverlay;
                     isKeyPressed[keyNo] = false;
                     break;
-                case GLFW_KEY_LEFT_CONTROL:
+                case GLFW_KEY_F:
                     // Makes the screen fullscreen unless screen saver mode is enabled
                     if (SCREENSAVER_MODE) break;
                     if (glfwGetWindowAttrib(win, GLFW_MAXIMIZED)) {
                         glfwRestoreWindow(win);
+                        glfwSetWindowSize(win, SCREEN_WIDTH, SCREEN_HEIGHT);
+                        glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
                     } else {
                         glfwMaximizeWindow(win);
                     }

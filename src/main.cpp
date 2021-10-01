@@ -38,7 +38,7 @@ extern const int   UNDEF_MOUSE_POS    = -1;    // The value to represent an unde
 extern const int   TOTAL_KEYS         = 350;   // The total amount of possible key presses
 
 // Main menu settings
-extern const int   MAIN_MENU_TIMER    = 600;   // How log the main menu lasts on the window
+extern const int   MAIN_MENU_TIMER    = 300;   // How log the main menu lasts on the window
 extern const int   MAX_FRAMES_MENU    = 119;   // How long the main menu animation lasts for (Must be a multiple of two - 1)
 extern const int   AUTO_SKIP_TIME     = 2800;  // How long until the animation automatically starts (2.8k = 1 minute)
 extern const int   TOTAL_SPL_TEX      = 20;    // How many variants of splash text
@@ -99,7 +99,7 @@ extern const int   TOTAL_P_TEX        = 4;     // The total amount of possible p
 extern const float TREE_LOOP_POS_Y    = 0.4;   // Y position of the looping trees in the background
 
 // Dynamic global variables
-bool gameState = false;        // Determines if the main menu should scroll or not
+bool gameState = false; // Determines if the main menu should scroll or not
 double initialMousePosX = UNDEF_MOUSE_POS, initialMousePosY = UNDEF_MOUSE_POS;
 
 /**
@@ -122,6 +122,7 @@ int main() {
     GLuint fragShader = chicken3421::make_shader("res/shaders/frag.glsl", GL_FRAGMENT_SHADER);
     GLuint renderProgram = chicken3421::make_program(vertShader, fragShader);
 
+    // Initiating scene and setting window user pointer to it
     scene sceneObjects;
     glfwSetWindowUserPointer(win, &sceneObjects);
 
@@ -135,6 +136,7 @@ int main() {
     // Creating the shape for the splash text
     sceneObjects.mainMenuObj.splashText = createFlatSquare();
     sceneObjects.mainMenuObj.mainMenu = createFlatSquare();
+    sceneObjects.mainMenuObj.zID = createFlatSquare();
     sceneObjects.mainMenuObj.setupMenu();
 
     // Creating the focal point Goat and set a pointer to that goat
@@ -216,7 +218,7 @@ int main() {
     // Setting up callbacks //
     //////////////////////////
 
-    // Window size
+    // Window size //
     glfwSetWindowSizeCallback(win, [](GLFWwindow* window, int width, int height) {
         scene *sceneObjects = (scene *) glfwGetWindowUserPointer(window);
         // Keeps the window at a 1:1 width:height ratio
@@ -235,9 +237,10 @@ int main() {
         
     });
 
-    // Sets callbacks for key presses. Current control scheme is:
+    // Key presses //
     // A for left, D for right, Space to jump, Tab to toggle vignette, Esc to close program
-    // Left Ctrl to toggle between maximised and minimised window
+    // F to toggle between maximised and minimised window. The affect of these presses
+    // is governed by the scene object
     glfwSetKeyCallback(win, [](GLFWwindow *win, int key, int scancode, int action, int mods) {
 
         // Grabs the window scene
@@ -247,8 +250,8 @@ int main() {
         if (action == GLFW_RELEASE) {
             sceneObjects->isKeyPressed[key] = false;
         } else if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-            if (key != GLFW_KEY_LEFT_CONTROL && !gameState) {
-                // Enables gameState if any key is pressed besides Left Ctrl
+            if (key != GLFW_KEY_F && key != GLFW_KEY_ESCAPE && !gameState) {
+                // Enables gameState if any key is pressed besides F or Esc
                 gameState = true;
             }
             sceneObjects->isKeyPressed[key] = true;
@@ -263,8 +266,9 @@ int main() {
         const GLFWvidmode* vidMode = glfwGetVideoMode(winMonitor);
         glfwSetWindowMonitor(win, winMonitor, 0, 0, vidMode->width, vidMode->height, vidMode->refreshRate);
 
-        // Detects if cursor moves
+        // Detects if cursor moves, then close program
         glfwSetCursorPosCallback(win, [](GLFWwindow *win,  double xPos, double yPos) {
+
             if (initialMousePosX == UNDEF_MOUSE_POS || initialMousePosY == UNDEF_MOUSE_POS) {
                 initialMousePosY = yPos; // initialMousePosX is a global variable
                 initialMousePosX = xPos; // initialMousePosY is a global variable
@@ -272,6 +276,7 @@ int main() {
                 // Closes window when it detects mouse movement
                 glfwSetWindowShouldClose(win, GLFW_TRUE);
             }
+
         });
 
         // Hides cursor

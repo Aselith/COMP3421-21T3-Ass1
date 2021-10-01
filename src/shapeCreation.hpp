@@ -11,7 +11,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
-
+// Required external variables
 extern const float GOAT_SCALE;
 extern const float GOAT_POS_Y;
 

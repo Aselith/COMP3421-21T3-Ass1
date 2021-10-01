@@ -28,12 +28,18 @@ struct shapeObject {
     glm::mat4 rot = glm::mat4(1.0f);
     glm::mat4 scale = glm::mat4(1.0f);
 
+    /**
+     * Resets the transformations to a clean slate
+     */
     void resetTransforms() {
         trans = glm::mat4(1.0f);
         rot = glm::mat4(1.0f);
         scale = glm::mat4(1.0f);
     }
 
+    /**
+     * Deletes this shape and the related VBO and VAO
+     */
     void deleteSelf() {
         vertices.clear();
         glDeleteBuffers(1, &vbo);

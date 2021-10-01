@@ -11,6 +11,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
+// Required external variables
+extern const int SCREEN_HEIGHT;
+extern const int SCREEN_WIDTH;
 extern const float SPLASH_AMPLITUDE;
 extern const float SPLASH_POS_X;
 extern const float SPLASH_POS_Y;
@@ -25,8 +28,9 @@ extern const int TOTAL_SPL_TEX;
  * Contains all things related to the main menu
  */
 struct mainMenuScene {
-    shapeObject mainMenu, splashText;
-    double menuScrollDist = 0, mainMenuTimer = MAIN_MENU_TIMER, sceneScale = 1;
+    shapeObject mainMenu, splashText, zID;
+    double menuScrollDist = 0, mainMenuTimer = MAIN_MENU_TIMER;
+    float sceneWidth = SCREEN_WIDTH, sceneHeight = SCREEN_HEIGHT; 
     GLuint (*menuAnimationFrames) = new GLuint[MAX_FRAMES_MENU];
     int menuCurrFrame = 0;
 
@@ -45,23 +49,35 @@ struct mainMenuScene {
         }
         // Grabs a random splash text texture from the corresponding folder
         splashText.textureID = makeTexture(appendRdmNum("res/img/mainMenu/splashText/splash_", 1, TOTAL_SPL_TEX));
+        zID.textureID = makeTexture("res/img/mainMenu/zid.png");
     }
 
     /**
      * Animates the main menu by one fram
+     * @param gameState whether the game has started scrolling or not
      */
     void tickMainMenu(bool gameState) {
+
+        float sceneScale = sceneHeight / sceneWidth;
+
         mainMenu.resetTransforms();
+        zID.resetTransforms();
         if (gameState) {
             menuScrollDist -= SCROLL_SPEED;
             
             mainMenu.trans = glm::translate(mainMenu.trans, glm::vec3(menuScrollDist, 0.0, 0.0));
+            zID.trans = glm::translate(zID.trans, glm::vec3(menuScrollDist, 0.0, 0.0));
             mainMenuTimer--;
         }
         mainMenu.textureID = menuAnimationFrames[menuCurrFrame];
 
         // Scales the main menu according to the entire scene sclae
-        mainMenu.scale = glm::scale(mainMenu.scale, glm::vec3(sceneScale, sceneScale, 0.0));
+        float multiplier = 1;
+        if (sceneScale != 1) {
+            multiplier = 1.2;
+        }
+        mainMenu.scale = glm::scale(mainMenu.scale, glm::vec3(multiplier * sceneScale, multiplier * sceneScale, 0.0));
+        zID.trans = glm::translate(zID.trans, glm::vec3(0, abs((sceneHeight - sceneWidth) / sceneWidth), 0.0));
 
         // Splash text animation modelled with a sin curve
         float newScale = 1 + glm::sin((M_PI * menuCurrFrame) / 20) * SPLASH_AMPLITUDE;
@@ -79,6 +95,7 @@ struct mainMenuScene {
      * right place on screen again
      */
     void resetSplashText() {
+        float sceneScale = sceneHeight / sceneWidth;
         splashText.resetTransforms();
         splashText.scale = glm::scale(splashText.scale, glm::vec3(SPLASH_SCALE, SPLASH_SCALE, 0.0));
         splashText.scale = glm::scale(splashText.scale, glm::vec3(sceneScale, sceneScale, 0.0));
@@ -90,11 +107,13 @@ struct mainMenuScene {
      * Scales the main menu down to fit the width and height
      */
     void adjustPosition(float width, float height) {
-        mainMenu.resetTransforms();
-        sceneScale = 1;
 
-        if (width > height) {
-            sceneScale = ( height / width );
+        mainMenu.resetTransforms();
+        zID.resetTransforms();
+
+        if (width >= height) {
+            sceneHeight = height;
+            sceneWidth = width;
         }
     }
 
@@ -102,8 +121,8 @@ struct mainMenuScene {
      * Deletes the shapes that consists of the main menu
      */
     void deleteShapes() {
-        delete[] menuAnimationFrames;
         mainMenu.deleteSelf();
         splashText.deleteSelf();
+        delete[] menuAnimationFrames;
     }
 };

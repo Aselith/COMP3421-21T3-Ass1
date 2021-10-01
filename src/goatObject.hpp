@@ -11,7 +11,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
-
+// Required external variables
 extern const int MAX_FRAMES_GOAT;
 extern const int ANIM_FRAME_LEN;
 extern const int AIRBORNE_LEN_MAX;
@@ -19,7 +19,6 @@ extern const float GOAT_JUMP_ROT;
 extern const float GOAT_WALK_SPEED;
 extern const int GOAT_WALK_RANGE;
 extern const float SCROLL_SPEED;
-
 
 /**
  * Contains everything related to the goat, including functions to control it
