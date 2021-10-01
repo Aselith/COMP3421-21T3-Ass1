@@ -27,7 +27,7 @@ const char *APP_TITLE  = "COMP3421 21T3 Assignment 1 [Minecraft: Goat Simulator]
 #define SCREEN_HEIGHT    900   // Screen height of the program
 #define SCREENSAVER_MODE false // Whether to compile this program as a screensaver or not
 #define UNDEF_MOUSE_POS  -1    // The value to represent an undefined mouse position
-#define TOTAL_KEYS       349   // The total amount of possible key presses
+#define TOTAL_KEYS       350   // The total amount of possible key presses
 
 // Main menu settings
 #define MAIN_MENU_TIMER  600   // How log the main menu lasts on the window
@@ -44,7 +44,7 @@ const char *APP_TITLE  = "COMP3421 21T3 Assignment 1 [Minecraft: Goat Simulator]
 #define TICKS_TO_SECOND  20    // Lower value = faster; Higher value = slower;
 
 // Ground settings:
-#define SCROLL_SPEED    0.01   // How fast the objects scroll by the screen
+#define SCROLL_SPEED     0.01  // How fast the objects scroll by the screen
 #define GROUND_POS_Y     -0.8  // Y position of the ground
 #define GROUND_SCALE     0.2   // Dimension size of ground
 #define GROUND_TILES     20    // How many tiles are in the shape
@@ -69,7 +69,7 @@ const char *APP_TITLE  = "COMP3421 21T3 Assignment 1 [Minecraft: Goat Simulator]
 #define GOAT_POS_Y       -0.27 // Y position of Goat
 #define GOAT_SCALE       0.4   // Scale of the Goat
 #define GOAT_JUMP_ROT    5.0f  // How many degrees the Goat rotates in its jump
-#define GOAT_WALK_SPEED  0.015 // How far the Goat moves when "D" is pressed
+#define GOAT_WALK_SPEED  0.01  // How far the Goat moves when "D" is pressed
 #define GOAT_WALK_RANGE  1     // How far from the centre of the screen the Goat can move to
 
 // Snow flake settings
@@ -260,6 +260,7 @@ struct goatObject {
     shapeObject goatShape;
     GLuint goatAnimationFrames[MAX_FRAMES_GOAT];
 private:
+    int frameLength = ANIM_FRAME_LEN;
     int currFrame = 0;
     int frameLifeTime = 0;
     bool isAirBorne = false;
@@ -282,12 +283,12 @@ public:
      * Animates the subsequent frame
      */
     void nextFrame() {
-        // Loops through the frames. Each frame lasts ANIM_FRAME_LEN long
+        // Loops through the frames. Each frame lasts "frameLength" long
         if (!isAirBorne) {
             if (frameLifeTime == 0) {
                 goatShape.textureID = goatAnimationFrames[currFrame];
                 currFrame = (currFrame + 1) % MAX_FRAMES_GOAT;
-                frameLifeTime = ANIM_FRAME_LEN;
+                frameLifeTime = frameLength;
             } else {
                 frameLifeTime -= 1;
             }
@@ -308,7 +309,34 @@ public:
                 goatShape.trans = glm::translate(goatShape.trans, glm::vec3(0.0, velocity, 0.0));
             }
         }
-        
+    }
+
+    /**
+     * Changes the length of each frame for the goat's walk cycle
+     */
+    void changeAnimationLength(int newLength) {
+        frameLength = newLength;
+    }
+
+    /**
+     * Changes the frame that the goat's walk cycle is on
+     */
+    void changeAnimationFrame(int newFrame) {
+        currFrame = newFrame;
+    }
+
+    /**
+     * Getter for walked distance
+     */
+    float getWalkedDistance() {
+        return walkedDistance;
+    }
+
+    /**
+     * Getter for whether the goat is in the air or not
+     */
+    bool getIsAirBorne() {
+        return isAirBorne;
     }
 
     /**
@@ -326,8 +354,8 @@ public:
      */
     void walkLeft() {
         if (walkedDistance > -GOAT_WALK_RANGE) {
-            walkedDistance += -2 * GOAT_WALK_SPEED;
-            goatShape.trans = glm::translate(goatShape.trans, glm::vec3(-2 * GOAT_WALK_SPEED, 0.0, 0.0));
+            walkedDistance += -SCROLL_SPEED;
+            goatShape.trans = glm::translate(goatShape.trans, glm::vec3(-SCROLL_SPEED, 0.0, 0.0));
         }
     }
 
@@ -340,11 +368,13 @@ public:
             isAirBorne = true;
             // Rotate the goat a bit on jump
             goatShape.rot = glm::rotate(goatShape.rot, glm::radians(GOAT_JUMP_ROT), glm::vec3(0.0, 0.0, 1.0));
-            // Randomly select a jumping texture for the goat
-            if (rand() % 2 == 0) {
+            // Selects the jumping frame that is closest to the current frame
+            if (abs(currFrame - 2) < abs(currFrame - 6)) {
                 goatShape.textureID = goatAnimationFrames[2];
+                changeAnimationFrame(3);
             } else {
                 goatShape.textureID = goatAnimationFrames[6];
+                changeAnimationFrame(7);
             }
         }
     }
@@ -510,6 +540,7 @@ public:
         skyAnimationFrames[1] = makeTexture("res/img/sky/nightSky_2.png");
 
         for (int i = 0; i < TOTAL_KEYS; i++) {
+            // Initialises all key presses to be false (aka not pressed down)
             isKeyPressed[i] = false;
         }
     }
@@ -800,7 +831,8 @@ public:
     void checkKeyInputs(GLFWwindow *win) {
         // Loops through the entire array to check if the key is pressed or not
         for (int keyNo = 0; keyNo < TOTAL_KEYS; keyNo++) {
-            // If key i is not pressed, skip to the next loop
+            // If key i is not pressed, skip to the next loop. If D is not pressed, reset the animation length
+            if (!isKeyPressed[keyNo] && keyNo == GLFW_KEY_D) goat.changeAnimationLength(ANIM_FRAME_LEN);
             if (!isKeyPressed[keyNo]) continue;
 
             switch (keyNo) {
@@ -813,9 +845,24 @@ public:
                     break;
                 case GLFW_KEY_A:
                     goat.walkLeft();
+                    if (!isKeyPressed[GLFW_KEY_D] && !isKeyPressed[GLFW_KEY_SPACE] && goat.getWalkedDistance() > -GOAT_WALK_RANGE) {
+                        // Sets texture to idle position if the right key or space key is not pressed
+                        goat.goatShape.textureID = goat.goatAnimationFrames[0];
+                        goat.changeAnimationFrame(1);
+                    }
+                    if (goat.getIsAirBorne()) {
+                        // Walk to the left two more times as to imitate hopping backwards
+                        goat.walkLeft();
+                    }
                     break;
                 case GLFW_KEY_D:
                     goat.walkRight();
+                    // Quickens the animation frame length if the goat has not walked out of range
+                    if (goat.getWalkedDistance() < GOAT_WALK_RANGE) {
+                        goat.changeAnimationLength(ANIM_FRAME_LEN / 2);
+                    } else {
+                        goat.changeAnimationLength(ANIM_FRAME_LEN);
+                    }
                     break;
                 case GLFW_KEY_TAB:
                     // Toggle overlay on or off
@@ -825,14 +872,14 @@ public:
                     isKeyPressed[keyNo] = false;
                     break;
                 case GLFW_KEY_LEFT_CONTROL:
-                    if (!SCREENSAVER_MODE) {
-                        if (glfwGetWindowAttrib(win, GLFW_MAXIMIZED)) {
-                            glfwRestoreWindow(win);
-                        } else {
-                            glfwMaximizeWindow(win);
-                        }
-                        isKeyPressed[keyNo] = false;
+                    // Makes the screen fullscreen unless screen saver mode is enabled
+                    if (SCREENSAVER_MODE) break;
+                    if (glfwGetWindowAttrib(win, GLFW_MAXIMIZED)) {
+                        glfwRestoreWindow(win);
+                    } else {
+                        glfwMaximizeWindow(win);
                     }
+                    isKeyPressed[keyNo] = false;
                     break;
             }
 
