@@ -124,6 +124,8 @@ Matrix transformations are mostly found in function calls called "tick". Tutor c
 
 The actual multiplication of matrix the shape can be found at line 343 in main.cpp, where it takes the stored glm::mat4 and applies it to the gl_Position in the vert.glsl file.
 
+The shapeObject struct in shapeObject.hpp has 3 matrices which control the translation, rotation and scale of an instance of a shapeObject. This is how each shape can have individual rotation, scaling and translating. shapeObject also has the vertices of that shape, so when creating an instance of shapeObject, the code is able to create separate individual shapes that won't be affected when another shape changes or has different vertices.
+
 3d.
 The render loop can be found in main.cpp from line 304 to line 364 (Including the variables used to calculate the delta time). The loop decides whether to perform matrix transformations on all the shapes (by calling the respective tick functions) between line 325 to 332 in main.cpp.
 
@@ -138,7 +140,7 @@ Many textures (evidenced by the abundance .png files in /res/img/) are used and 
 To replicate the Minecraft aesthetic, all shapes have a pixel art texture applied to it taken from the original Minecraft game. All textures are created by Jasper "JAPPA" Boerstra. My program loads in a image file using chicken3421::load_image and then turns it into a texture handler similar to tute02. The texture handler is then stored in the shapeObject if that texture is to be applied to that shape. This is how I was able to load in multiple textures and apply it to different shapes
 
 4c.
-My application is able to alter a shapes texture by replacing the texture handler in the shapeObject's GLuint textureID with a new texture handler representing another texture. I store all related textureIDs in a GLuint array and then change the texture of a shape by indexing the array accordingly. At the end, all textures and images are destroyed.
+My application is able to alter a shapes texture by replacing the texture handler in the shapeObject's GLuint textureID with a new texture handler representing another texture. I store all related textureIDs in a GLuint array and then change the texture of a shape by indexing the array accordingly. When the program closes, all textures and images are destroyed.
 
 ### When your application is run, what should the tutor look for or do to see that you have fulfilled this requirement?
 
@@ -158,6 +160,8 @@ All texture files can be seen in /res/img. Example of multiple texture creation 
 The frames for the goat walk animation can be seen loaded in at line 38 to 48 in goatObject.hpp.
 
 The main menu frames can be seen loaded in between line 40 to 53 in mainMenuScene.hpp.
+
+The shapeObject struct in shapeObject.hpp has a GLuint variable called textureID. This is how the program knows what texture is to be applied to what shape.
 
 4c.
 Related textures that are apart of the same frame can be found in /res/img/ starting with the same phrase but ending in a different number which indicates its frame. Texture swapping can be found in the goat's animation in goatObject.hpp between lines 56 to 62 where we can see the textureID changing to one of the textureID stored in goatAnimationFrames "goatShape.textureID = goatAnimationFrames[currFrame];" The texture swapping of the main menu animation can be found in mainMenuScene.hpp between lines 59 to 91.
