@@ -89,14 +89,14 @@ Multiple shape creation can be best seen for the snowflakes. The snowflake creat
 My program uses the glm library to perform matrix transformations.
 Matrix transformations is supported by the edited vert.glsl and is applied to the respective shape at line 343 in main.cpp.
 
-Matrix transformations can be found in almost all the shapes visible. A list of matrix transformations (may be missing a few) that cam occur when the program is running:
+Matrix transformations can be found in almost all the shapes visible. A list of matrix transformations (may be missing a few) that can occur when the program is running:
 * The splashing effect of the yellow text at the main menu follows a sin curve in scaling it up and down.
-* Each snowflake struct has a random rotation speed, gravity and velocity, which are all used in rotating the shape and translating the shape into different positions to mimic wind and gravity
+* Each snowflake struct has a random rotation speed, gravity and velocity, which are all used in rotating the shape and translating the shape into different positions to mimic wind and gravity, while still adding variety to the snowflakes
 * While the goat is walking, all shapes (besides the goat) are translated to the left by a bit each frame to simulate the goat walking. The goat can also move on the screen when A, D and SPACE are pressed. The goat jumping follows a derivative curve which translates the goat up and then down after the turning point of the curve.
 * Depending on the width and height of the window, the title screen will be scaled down to fit the new width. The moon and clouds will be translated downwards and the zID will be translated upwards.
 
 3d.
-I have edited the starter code render loop to make use of delta time. Before the loop starts, the program takes the current epoch time and then at the end of the loop, it takes the current time again and subtracts it from the previous epoch time. The difference is then added to a variable called deltaTime. With each loop the program checks if the deltaTime has exceeded TICKS_TO_SECOND. If it has, then it will call the tick functions inside scene.hpp which will calculate the position of all the shapes in the next frame. Then, all the shapes are then redrawn onto the screen. TICKS_TO_SECOND is then subtracted from deltaTime and the loop repeats.
+I have edited the starter code render loop to make use of delta time. Before the loop starts, the program takes the current epoch time and then at the end of the loop, it takes the current time again and subtracts it from the previous epoch time. The difference is then added to a variable called deltaTime. With each loop the program checks if the deltaTime has exceeded TICKS_TO_SECOND. If it has, then it will call the tick functions inside scene.hpp which will calculate the position of all the shapes in the next frame. Then, all the shapes are then redrawn onto the screen. TICKS_TO_SECOND is then subtracted from deltaTime and the loop repeats. The render loop with all these features can be found in main.cpp from line 310 onwards.
 
 
 ### When your application is run, what should the tutor look for or do to see that you have fulfilled this requirement?

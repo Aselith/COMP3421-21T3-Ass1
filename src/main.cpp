@@ -317,11 +317,11 @@ int main() {
 
         glUseProgram(renderProgram);
         glfwPollEvents();
-
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(0, 0, 0, 1);
 
-        // When deltaTime exceeds TICKS_TO_SECOND, animate each scene object
+        // When deltaTime exceeds TICKS_TO_SECOND, calculate the transformations of each scene object
+        // for the next frame
         if (deltaTime >= TICKS_TO_SECOND) {
             if (!gameState && autoSkipTimer > 0) {
                 autoSkipTimer -= 1;
