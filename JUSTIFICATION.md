@@ -157,16 +157,16 @@ All texture files can be seen in /res/img. Example of multiple texture creation 
 
 The frames for the goat walk animation can be seen loaded in at line 38 to 48 in goatObject.hpp.
 
-The main menu frames can be seen between line 40 to 53 in mainMenuScene.hpp.
+The main menu frames can be seen loaded in between line 40 to 53 in mainMenuScene.hpp.
 
 4c.
-Related textures that are apart of the same frame can be found in /res/img/ starting with the same word but ending in a different number which indicates its frame. Texture swapping can be found in the goat's animation in goatObject.hpp between lines 56 to 62 where we can see the textureID changing to one of the textureID stored in goatAnimationFrames "goatShape.textureID = goatAnimationFrames[currFrame];" The texture swapping of the main menu animation can be found in mainMenuScene.hpp between lines 59 to 91.
+Related textures that are apart of the same frame can be found in /res/img/ starting with the same phrase but ending in a different number which indicates its frame. Texture swapping can be found in the goat's animation in goatObject.hpp between lines 56 to 62 where we can see the textureID changing to one of the textureID stored in goatAnimationFrames "goatShape.textureID = goatAnimationFrames[currFrame];" The texture swapping of the main menu animation can be found in mainMenuScene.hpp between lines 59 to 91.
 
 The subtle texture changes to the background objects can be found in scene.hpp at the end of functions tickFgObjA(), tickFgObjB() and tickParallax(), where it finds a random index in the array which stores the texture handlers and uses the handler stored at that index as the new texture.
 
 ### Section 5: Subjective Mark
 
-This project is a homage to Notch Persson's Minecraft, which is currently owned by Mojang, a subsidiary of Microsoft. My project  and borrows a lot of textures from that game. All textures used in this project are taken from Minecraft's lead pixel artist Jasper "JAPPA" Boerstra and are assembled together into individual files by me. The aim of this project for me was to try and recreate as much as possible from Minecraft. The randomly placed background scenery was my attempt at recreating the randomly generated worlds of Minecraft, the splash yellow text was also my attempt at recreating the yellow text found beneath the title screen whenever the player starts up Minecraft. The message used for the splash text were all suggested by my friends.
+This project is a homage to Notch Persson's Minecraft, which is currently owned by Mojang, a subsidiary of Microsoft. All textures used in this project are taken from Minecraft's lead pixel artist Jasper "JAPPA" Boerstra and are assembled together into individual files by me. The aim of this project for me was to try and recreate as much as possible from Minecraft with the knowledge taught so far in the course. The randomly placed background scenery was my attempt at recreating the randomly generated worlds of Minecraft, the splash yellow text was also my attempt at recreating the yellow text found beneath the title screen whenever the player starts up Minecraft. The message used for the splash text were all suggested by my friends.
 
 Each background scenery also represents something that can appear in the world of Minecraft, such as the ruined Nether Portal and the Igloo. I have also chosen the Goat animal as it is one of the latest animals added to Minecraft as of 10/1/2021 and has been a meme around the community.
 
