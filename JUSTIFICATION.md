@@ -2,37 +2,46 @@
 
 If you think any of the questions within the sections are not applicable, please write "N/A".
 
+Application available controls:
+- SPACE to jump
+- A to walk left
+- D to walk right
+- TAB to toggle vignette
+- F to maximise
+- ESC to close application
+
 ## Section 1: It runs
+
+The code compiles fine on the two computers that I've tested on (Both are Windows 10). A window of size 900x900 with a favicon should appear when the code is run.
 
 ### How have you fulfilled this requirement?
 
 I've fufilled this requirement by creating an openGL window using the chicken3421 lib and also
-creating a render program with the verts and frags. Then, inside a while loop that keeps looping until
-the window is destroyed, my code uses the render program and also fetches all shapes that need to be drawn
-and then renders it by drawing the shape's vertices and binding it's VAO, VBO and texture. Delta time is used
-to measure the timing of the program's animations.
+creating a render program with the verts and frags. Then, inside a while loop that keeps looping until the window is destroyed, my code uses the render program and also fetches all shapes that need to be drawn and then renders it by drawing the shape's vertices and binding it's VAO, VBO and texture. Delta time is used to measure the timing of the program's animations.
 
 Once the window's "should close" flag is set to true (by either pressing esc or closing the window), the while loop is exited and all the shapes, program and shaders are destroyed and the program ends successfully.
 
-I've also tested that this code works and compiles on another laptop by setting up the course's basic environment (following the given "OpenGL CMake setup" guide) and then git cloning this repo and building it, which leads to a successful build and the program working as intended. I mainly use Windows 10.
+I've also tested that this code works and compiles on another laptop by setting up the course's basic environment (following the given "OpenGL CMake setup" guide and running run fetch_deps.sh -G Ninja) and then git cloning this repo and building it, which leads to a successful build and the program working as intended. I mainly use Windows 10.
 
 From the starter code, I have made substantial changes to the main.cpp and added 8 more files which helps with organising the shapes being created. main.cpp is where the OpenGL window is created.
 
 ### When your application is run, what should the tutor look for or do to see that you have fulfilled this requirement? 
 
 When the app is run, the tutor should be able to see a window pop up on their desktop with the title
-"COMP3421 21T3 Assignment 1 [Minecraft: Goat Simulator]" and dimensions of 900x900. The title should also
-have a little Minecraft Goat favicon next to it. The tutor can resize the program to fit their computer, however the height can not exceed the width (intentional to keep the shapes in ratio).
+"COMP3421 21T3 Assignment 1 [Minecraft: Goat Simulator]" and dimensions of 900x900. The title should also have a little Minecraft Goat favicon next to it. The tutor can resize the program to fit their computer, however the height can not exceed the width (intentional to keep the shapes in ratio).
 
 ### Where in the code should tutors look to see that you've fulfilled this requirement?
 
 The OpenGL window creation that is esential to the code compiling
 can be found in the main function located between line 110 to line 130 in main.cpp.
-The while loop which renders everything and keeps the program alive is between line 310 to 364 in main.cpp.
-The destruction of the openGL window when the program ends can be found in main.cpp between 366 to 374.
+The while loop which renders everything and keeps the program alive is between line 310 to 364 in main.cpp. The destruction of the openGL window when the program ends can be found in main.cpp between 366 to 374.
+
+A picture of what the program should look like when it first starts is included in /res/img/programScreenshot.png.
 
 
 ## Section 2: Visibility & Shaders
+
+The vert.glsl and frag.glsl were edited so that textures can be visible on the shapes and that matrix multiplication can alter the positions of the shape vertices. Those files also allow for the shapes itself to appear.
 
 ### How have you fulfilled this requirement?
 
@@ -65,6 +74,7 @@ The tutor should also see how these files are incorporated into the program by v
 ## Section 3: Creation and Use of 2D Shapes
 
 This program completes all requirements 3a, 3b, 3c, 3d
+2D shapes are used for each individual snowflake, the goat, each background shape, the main menu, the moon etc. etc. Matrix multiplications are run on each shape after a certain time elapses between each loop in the render loop. At the end of the loop, the shapes are redrawn based on the result of the matrix multiplications.
 
 ### How have you fulfilled this requirement?
 
@@ -79,14 +89,14 @@ Multiple shape creation can be best seen for the snowflakes. The snowflake creat
 My program uses the glm library to perform matrix transformations.
 Matrix transformations is supported by the edited vert.glsl and is applied to the respective shape at line 343 in main.cpp.
 
-Matrix transformations can be found in almost all the shapes visible. A list of all matrix transformations that occur when the program is running:
+Matrix transformations can be found in almost all the shapes visible. A list of matrix transformations (may be missing a few) that cam occur when the program is running:
 * The splashing effect of the yellow text at the main menu follows a sin curve in scaling it up and down.
 * Each snowflake struct has a random rotation speed, gravity and velocity, which are all used in rotating the shape and translating the shape into different positions to mimic wind and gravity
 * While the goat is walking, all shapes (besides the goat) are translated to the left by a bit each frame to simulate the goat walking. The goat can also move on the screen when A, D and SPACE are pressed. The goat jumping follows a derivative curve which translates the goat up and then down after the turning point of the curve.
 * Depending on the width and height of the window, the title screen will be scaled down to fit the new width. The moon and clouds will be translated downwards and the zID will be translated upwards.
 
 3d.
-I have edited the starter code render loop to make use of delta time. Before the loop starts, the program takes the current epoch time and then at the end of the loop, it takes the current time again and subtracts it from the previous epoch time. The difference is then added to a variable called deltaTime. With each loop the program checks if the deltaTime has exceeded TICKS_TO_SECOND. If it has, then it will call the tick functions inside scene.hpp which will calculate the position of all the shapes in the next frame. TICKS_TO_SECOND is then subtracted from deltaTime and the loop repeats.
+I have edited the starter code render loop to make use of delta time. Before the loop starts, the program takes the current epoch time and then at the end of the loop, it takes the current time again and subtracts it from the previous epoch time. The difference is then added to a variable called deltaTime. With each loop the program checks if the deltaTime has exceeded TICKS_TO_SECOND. If it has, then it will call the tick functions inside scene.hpp which will calculate the position of all the shapes in the next frame. Then, all the shapes are then redrawn onto the screen. TICKS_TO_SECOND is then subtracted from deltaTime and the loop repeats.
 
 
 ### When your application is run, what should the tutor look for or do to see that you have fulfilled this requirement?
@@ -120,6 +130,7 @@ The render loop can be found in main.cpp from line 304 to line 364 (Including th
 ## Section 4: Use of Textures
 
 This program completes all requirements 4a, 4b, 4c
+Many textures (evidenced by the abundance .png files in /res/img/) are used and applied to multiple or one shape. Application alters textures during runtime for the goat shape (for its run animation) and the main menu shpae (for the two little blue squid animation).
 
 ### How have you fulfilled this requirement?
 
@@ -132,17 +143,21 @@ My application is able to alter a shapes texture by replacing the texture handle
 ### When your application is run, what should the tutor look for or do to see that you have fulfilled this requirement?
 
 4a. and 4b.
-The application begins with a plethora of shapes with different textures. If the tutor wants to see more textures, they can either restart the application to get a newly generated scenery, or leave the application running to see different shapes of different textures scroll past the screen.
+The application begins with a plethora of shapes with different textures. If the tutor wants to see more textures, they can either restart the application to get a newly generated scenery, or leave the application running to see different shapes of different textures scroll past the screen. When the program first starts, the tutor should see a flat square with the main menu texture, followed by smaller different shapes that has the goat texture, tree texture, splash text texture, snow flake texture etc.
 
 4c.
-The main menu animation with the blue squid (Glow Squid) is achieved by quickly switching out the texture IDs of the main menu shape. The Goat's walk cycle also uses the same technique. This technique creates an illusion of movement.
+The main menu animation with the blue squid (Glow Squid) is achieved by quickly switching out the texture IDs of the main menu shape. The program iterates through an array of GLuint with each cell representing a texture handler for a frame in the animation. During the iteration, it will assign the cell values to the shapes textureID, which will swap the textures in the next frame to a different texture, creating an illusion of movment. The Goat's walk cycle also uses the same technique.
 
 A more subtle texture change would be the background objects. Once the background object reaches offscreen, its texture changes and is then translated back to the beginning. This way, we won't need to create too many shapes.
 
 ### Where in the code should tutors look to see that you've fulfilled this requirement?
 
 4a. and 4b.
-All texture files can be seen in /res/img. Example of multiple texture creation can be found in scene.hpp between lines 80 to 108 and at the beginning of the main function in main.cpp between lines 138 to line 207. Multiple related textures are stored in arrays, seen for the possible background textures in scene.hpp line 83 to 94. The frames for the goat walk animation can be seen loaded in at line 38 to 48 in goatObject.hpp. The main menu frames can be seen between line 40 to 53 in mainMenuScene.hpp.
+All texture files can be seen in /res/img. Example of multiple texture creation can be found in scene.hpp between lines 80 to 108 and at the beginning of the main function in main.cpp between lines 138 to line 207. Multiple related textures are stored in arrays, seen for the possible background textures in scene.hpp line 83 to 94.
+
+The frames for the goat walk animation can be seen loaded in at line 38 to 48 in goatObject.hpp.
+
+The main menu frames can be seen between line 40 to 53 in mainMenuScene.hpp.
 
 4c.
 Related textures that are apart of the same frame can be found in /res/img/ starting with the same word but ending in a different number which indicates its frame. Texture swapping can be found in the goat's animation in goatObject.hpp between lines 56 to 62 where we can see the textureID changing to one of the textureID stored in goatAnimationFrames "goatShape.textureID = goatAnimationFrames[currFrame];" The texture swapping of the main menu animation can be found in mainMenuScene.hpp between lines 59 to 91.
@@ -151,9 +166,11 @@ The subtle texture changes to the background objects can be found in scene.hpp a
 
 ### Section 5: Subjective Mark
 
-This project is a homage to Notch Persson's Minecraft, and borrows a lot of textures from that game. All textures used in this project are taken from Minecraft and assembled together by me. The aim of this project for me was to try and recreate as much as possible from Minecraft. The randomly placed background scenery was my attempt at recreating the randomly generated worlds of Minecraft, the splash yellow text was also my attempt at recreating the yellow text found beneath the title screen whenever the player starts up Minecraft.
+This project is a homage to Notch Persson's Minecraft, which is currently owned by Mojang, a subsidiary of Microsoft. My project  and borrows a lot of textures from that game. All textures used in this project are taken from Minecraft's lead pixel artist Jasper "JAPPA" Boerstra and are assembled together into individual files by me. The aim of this project for me was to try and recreate as much as possible from Minecraft. The randomly placed background scenery was my attempt at recreating the randomly generated worlds of Minecraft, the splash yellow text was also my attempt at recreating the yellow text found beneath the title screen whenever the player starts up Minecraft. The message used for the splash text were all suggested by my friends.
 
-The 2D parallax scenery was also inspired by Hollow Knight's use of parallax images, and I've used it here to try and capture the 3D space of Minecraft within a 2D space.
+Each background scenery also represents something that can appear in the world of Minecraft, such as the ruined Nether Portal and the Igloo. I have also chosen the Goat animal as it is one of the latest animals added to Minecraft as of 10/1/2021 and has been a meme around the community.
+
+The 2D parallax scenery was also inspired by Hollow Knight's use of parallax images, and I've used it here to try and capture the 3D space of Minecraft within a 2D space limitation.
 
 ### How have you fulfilled this requirement?
 
@@ -176,4 +193,4 @@ I used the OpenGL Mathematics Library (glm)
 
 ### Why did you decide to use it?
 
-To simplify the matrix transformations, rotations and scaling.
+To simplify the matrix transformations, rotations and scaling by calling the functions glm::rotate, glm::translate and glm::scale.
