@@ -26,5 +26,15 @@ copy_resources(${CMAKE_CURRENT_LIST_DIR}/res ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/r
 
 add_executable(ass1)
 target_include_directories(ass1 PUBLIC include)
+target_sources(ass1 PRIVATE ${PROJECT_SOURCE_DIR}/src/vert.hpp)
+target_sources(ass1 PRIVATE ${PROJECT_SOURCE_DIR}/src/shapeObject.hpp)
+target_sources(ass1 PRIVATE ${PROJECT_SOURCE_DIR}/src/goatObject.hpp)
+target_sources(ass1 PRIVATE ${PROJECT_SOURCE_DIR}/src/mainMenuScene.hpp)
+target_sources(ass1 PRIVATE ${PROJECT_SOURCE_DIR}/src/helperFunctions.hpp)
+target_sources(ass1 PRIVATE ${PROJECT_SOURCE_DIR}/src/shapeCreation.hpp)
+target_sources(ass1 PRIVATE ${PROJECT_SOURCE_DIR}/src/scene.hpp)
+target_sources(ass1 PRIVATE ${PROJECT_SOURCE_DIR}/src/snowFlakeObject.hpp)
 target_sources(ass1 PRIVATE ${PROJECT_SOURCE_DIR}/src/main.cpp)
+
+
 target_link_libraries(ass1 PUBLIC ${COMMON_LIBS})
