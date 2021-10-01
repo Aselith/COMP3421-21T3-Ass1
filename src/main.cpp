@@ -1,4 +1,6 @@
-// C++17 doesn't have std::pi
+/**
+ * Created by Gordon Wang z5309206
+ */
 #define _USE_MATH_DEFINES
 #include <cmath>
 
@@ -14,8 +16,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/ext/matrix_transform.hpp>
-
 #include <iostream>
+
 #include "helperFunctions.hpp"
 #include "vert.hpp"
 #include "shapeObject.hpp"
@@ -304,6 +306,7 @@ int main() {
     long endLoop = 0, deltaTime = TICKS_TO_SECOND;
     int autoSkipTimer = AUTO_SKIP_TIME;
 
+    // CONTROLS THE ANIMATION AND THE TIMING OF WHAT IS DISPLAYED AND RENDERED
     while (!glfwWindowShouldClose(win)) {
         
         if (!gameState && autoSkipTimer == 0) {
