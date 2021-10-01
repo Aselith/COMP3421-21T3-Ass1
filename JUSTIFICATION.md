@@ -190,6 +190,21 @@ Responsive control scheme to mimic the controls in Minecraft (Being able to pres
 
 The abundant breezy snow flakes which follow a sin curve to try and evoke a sense of tranquility in the audience.
 
+### Other noteworthy implementations that may not have been mentioned
+
+* The goat's walking animation also doubles when the player moves to the right.
+
+* Background elements reference structures from Minecraft.
+
+* The many randomly selected splash texts are suggested by my friends and references to the many random messages found on the Minecraft title screen
+
+* The moon phase changes with each run of the program
+
+* Walking left stops the goat's walking animation. This is because the camera is moving to the right.
+
+* The texture that makes up the rectangular ground is a repeating texture of one square texture image
+
+* There's a screensaver mode if the code is edited so that line 38 of main.cpp "SCREENSAVER_MODE" has a value of true. This puts the program in fullscreen mode and moving the mouse would cause the program to close. We can turn this application into an actual screensaver with this by changing the extension of the compiled program from .exe to .scr
 
 ## Use of External Libraries
 
