@@ -30,6 +30,8 @@ From the starter code, I have made substantial changes to the main.cpp and added
 When the app is run, the tutor should be able to see a window pop up on their desktop with the title
 "COMP3421 21T3 Assignment 1 [Minecraft: Goat Simulator]" and dimensions of 900x900. The title should also have a little Minecraft Goat favicon next to it. The tutor can resize the program to fit their computer, however the height can not exceed the width (intentional to keep the shapes in ratio).
 
+The program is running as expected if the terminal is able to output colored messages like "Program start", "ObjA spawned" etc.
+
 ### Where in the code should tutors look to see that you've fulfilled this requirement?
 
 The OpenGL window creation that is esential to the code compiling
